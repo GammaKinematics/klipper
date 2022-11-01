@@ -82,12 +82,50 @@ is_triggered(struct analog_probe *e){
     return inf_trig || sup_trig;
 }
 
-// Timer callback for an end stop
+void 
+update_adc_sensor(struct analog_in *a)
+{
+    uint32_t sample_delay = gpio_adc_sample(a->pin);
+    if (sample_delay) {
+        a->timer.waketime += sample_delay;
+        return;
+    }
+    uint16_t value = gpio_adc_read(a->pin);
+    uint8_t state = a->state;
+    if (state >= a->sample_count) {
+        state = 0;
+    } else {
+        value += a->value;
+    }
+    a->value = value;
+    a->state = state+1;
+    if (a->state < a->sample_count) {
+        a->timer.waketime += a->sample_time;
+        return;
+    }
+    if (likely(a->value >= a->min_value && a->value <= a->max_value)) {
+        a->invalid_count = 0;
+    } else {
+        a->invalid_count++;
+        if (a->invalid_count >= a->range_check_count) {
+            try_shutdown("ADC out of range");
+            a->invalid_count = 0;
+        }
+    }
+    a->next_begin_time += a->rest_time;
+    a->timer.waketime = a->next_begin_time;
+    return;
+}
+
+// Timer callback for the analog probe
 static uint_fast8_t
 analog_probe_event(struct timer *t)
 {
-    analog_in_event(t);
-    struct analog_probe *e = container_of(container_of(t, struct analog_in, timer), struct analog_probe, adc_sensor);
+    //analog_in_event(t);
+    struct analog_in *a = container_of(t, struct analog_in, timer);
+    update_adc_sensor(a);
+
+    struct analog_probe *e = container_of(a, struct analog_probe, adc_sensor);
     update_buffer(e, e->adc_sensor.value);
     if (is_triggered(e) && e->target) {
         trsync_do_trigger(e->ts, e->trigger_reason);

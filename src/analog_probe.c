@@ -15,15 +15,15 @@
 
 #define ANALOG_PROBE_BUFFER_LENGTH 200
 
-struct analog_in {
-    struct timer timer;
-    uint32_t rest_time, sample_time, next_begin_time;
-    uint16_t value, min_value, max_value;
-    struct gpio_adc pin;
-    uint8_t invalid_count, range_check_count;
-    uint8_t state, sample_count;
-};
-static uint_fast8_t analog_in_event(struct timer *timer);
+// struct analog_in {
+//     struct timer timer;
+//     uint32_t rest_time, sample_time, next_begin_time;
+//     uint16_t value, min_value, max_value;
+//     struct gpio_adc pin;
+//     uint8_t invalid_count, range_check_count;
+//     uint8_t state, sample_count;
+// };
+// static uint_fast8_t analog_in_event(struct timer *timer);
 
 struct analog_probe {
     struct analog_in adc_sensor;
@@ -100,7 +100,7 @@ command_config_analog_probe(uint32_t *args)
 {
     struct analog_probe *e = oid_alloc(args[0], command_config_analog_probe, sizeof(*e));
     
-    e->pin = gpio_adc_setup(args[1]);
+    e->adc_sensor->pin = gpio_adc_setup(args[1]);
     
     e->trigger_sup = args[3];
     e->trigger_inf = args[4];

@@ -38,35 +38,35 @@ struct analog_probe {
 };
 
 void
-update_buffer(struct analog_probe *probe) {
-    if (probe->buffer_index < (probe->buffer_length-1)) {
-        probe->buffer[probe->buffer_index] = probe->raw_value;
-        probe->buffer_index++;
+update_buffer(struct analog_probe *pr) {
+    if (pr->buffer_index < (pr->buffer_length-1)) {
+        pr->buffer[pr->buffer_index] = pr->raw_value;
+        pr->buffer_index++;
     } else {
-        for (int i = 0; i < probe->buffer_index; i++) {
-            probe->buffer[i] = probe->buffer[i+1];
+        for (int i = 0; i < pr->buffer_index; i++) {
+            pr->buffer[i] = pr->buffer[i+1];
         }
-        probe->buffer[probe->buffer_index] = new_value;
+        pr->buffer[pr->buffer_index] = pr->raw_value;
     }
-    probe->current_value = 0.0;
-    if (probe->buffer_index >= (probe->current_buffer_length-1)) {
-        for (int i = probe->buffer_index-probe->current_buffer_length+1; i <= probe->buffer_index; i++) {
-            probe->current_value += probe->buffer[i];
+    pr->current_value = 0.0;
+    if (pr->buffer_index >= (pr->current_buffer_length-1)) {
+        for (int i = pr->buffer_index-pr->current_buffer_length+1; i <= pr->buffer_index; i++) {
+            pr->current_value += pr->buffer[i];
         }
-        probe->current_value /= probe->current_buffer_length;
+        pr->current_value /= pr->current_buffer_length;
     }
 }
 
 uint8_t 
-is_triggered(struct analog_probe *probe){
+is_triggered(struct analog_probe *pr){
     uint8_t inf_trig, sup_trig;
-    if (probe->trigger_inf) {
-        inf_trig = probe->current_value < ((1-probe->threshold)*probe->tare);
+    if (pr->trigger_inf) {
+        inf_trig = pr->current_value < ((1-pr->threshold)*pr->tare);
     } else {
         inf_trig = 0;
     }
-    if (probe->trigger_sup) {
-        sup_trig = probe->current_value > ((1+probe->threshold)*probe->tare);
+    if (pr->trigger_sup) {
+        sup_trig = pr->current_value > ((1+pr->threshold)*pr->tare);
     } else {
         sup_trig = 0;
     }
@@ -74,28 +74,28 @@ is_triggered(struct analog_probe *probe){
 }
 
 void 
-update_adc_sensor(struct analog_probbe *probe)
+update_adc_sensor(struct analog_probbe *pr)
 {
-    uint32_t sample_delay = gpio_adc_sample(probe->pin);
+    uint32_t sample_delay = gpio_adc_sample(pr->pin);
     if (sample_delay) {
-        probe->time.waketime += sample_delay;
+        pr->time.waketime += sample_delay;
         return;
     }
-    uint16_t value = gpio_adc_read(probe->pin);
-    uint8_t state = probe->state;
-    if (state >= probe->sample_count) {
+    uint16_t value = gpio_adc_read(pr->pin);
+    uint8_t state = pr->state;
+    if (state >= pr->sample_count) {
         state = 0;
     } else {
-        value += probe->raw_value;
+        value += pr->raw_value;
     }
-    probe->raw_value = value;
-    probe->state = state+1;
-    if (probe->state < probe->sample_count) {
-        probe->time.waketime += probe->sample_time;
+    pr->raw_value = value;
+    pr->state = state+1;
+    if (pr->state < pr->sample_count) {
+        pr->time.waketime += pr->sample_time;
         return;
     }
-    probe->nextwake += probe->rest_time;
-    probe->time.waketime = probe->nextwake;
+    pr->nextwake += pr->rest_time;
+    pr->time.waketime = pr->nextwake;
     return;
 }
 
@@ -127,17 +127,17 @@ command_config_analog_probe(uint32_t *args)
     probe->auto_threshold = args[6];
     probe->std_multiplier = args[7];
 
-    if (args[7] < sizeof(e->buffer)/sizeof(uint16_t)) {
+    if (args[7] < sizeof(probe->buffer)/sizeof(uint16_t)) {
         probe->tare_buffer_length = args[8];
     } else {
-        probe->tare_buffer_length = sizeof(e->buffer)/sizeof(uint16_t);
+        probe->tare_buffer_length = sizeof(probe->buffer)/sizeof(uint16_t);
     }
-    if (args[8] < sizeof(e->buffer)/sizeof(uint16_t)) {
+    if (args[8] < sizeof(probe->buffer)/sizeof(uint16_t)) {
         probe->current_buffer_length = args[9];
     } else {
-        probe->current_buffer_length = sizeof(e->buffer)/sizeof(uint16_t);
+        probe->current_buffer_length = sizeof(probe->buffer)/sizeof(uint16_t);
     }
-    probe->buffer_length = sizeof(e->buffer)/sizeof(uint16_t);
+    probe->buffer_length = sizeof(probe->buffer)/sizeof(uint16_t);
     probe->buffer_index = 0;
     probe->tare = 0.0;
     probe->current_value = 0.0;
@@ -151,13 +151,13 @@ void
 command_analog_probe_home(uint32_t *args)
 {
     struct analog_probe *probe = oid_lookup(args[0], command_config_analog_probe);
-    sched_del_timer(&probe.time);
+    sched_del_timer(&probe->time);
     gpio_adc_cancel_sample(probe->pin);
     probe->nextwake = args[1];
     probe->time.waketime = probe->nextwake;
     probe->sample_time = args[2];
     probe->sample_count = args[3];
-    if (!e->adc_sensor.sample_count) {
+    if (!probe->sample_count) {
         // Disable end stop checking
         probe->ts = NULL;
         probe->target = 0;
@@ -206,7 +206,7 @@ void
 command_do_tare(uint32_t *args) {
     struct analog_probe *probe = oid_lookup(args[0], command_config_analog_probe);
     probe->tare = 0.0;
-    for (int i = probe->buffer_index-e->tare_buffer_length+1; i <= probe->buffer_index; i++) {
+    for (int i = probe->buffer_index-probe->tare_buffer_length+1; i <= probe->buffer_index; i++) {
         probe->tare += probe->buffer[i];
     }
     probe->tare /= probe->tare_buffer_length;

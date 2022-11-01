@@ -20,16 +20,16 @@ struct analog_probe {
 
     uint8_t trigger_sup, trigger_inf;
     
-    float threshold;
+    double threshold;
     uint8_t auto_threshold;
-    float std_multiplier;
+    double std_multiplier;
 
     uint8_t tare_buffer_length, current_buffer_length, buffer_length, buffer_index;
     uint16_t buffer[ANALOG_PROBE_BUFFER_LENGTH];
 
     uint16_t raw_value;
-    float current_value;
-    float tare;
+    double current_value;
+    double tare;
 
     struct timer time;
     uint32_t rest_time, sample_time, nextwake;
@@ -224,11 +224,11 @@ void
 command_set_threshold(uint32_t *args){
     struct analog_probe *probe = oid_lookup(args[0], command_config_analog_probe);
     if (!args[2]) {
-        probe->threshold = float()args[1]/10;
+        probe->threshold = (double)args[1]/10;
         probe->auto_threshold = 0;
     } else {
         probe->auto_threshold = 1;
-        probe->std_multiplier = (float)args[3]/100;
+        probe->std_multiplier = (double)args[3]/100;
     }
 }
 DECL_COMMAND(command_set_threshold, "analog_probe_set_thresh oid=%c trig_th=%u auto_th=%c auto_std_mul=%u");

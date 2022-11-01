@@ -27,7 +27,7 @@
 // static uint_fast8_t analog_in_event(struct timer *timer);
 
 struct analog_probe {
-    struct analog_in* adc_sensor;
+    struct analog_in adc_sensor;
 
     uint8_t trigger_sup, trigger_inf;
     
@@ -88,7 +88,7 @@ analog_probe_event(struct timer *t)
 {
     analog_in_event(t);
     struct analog_probe *e = container_of(container_of(t, struct analog_in, timer), struct analog_probe, adc_sensor);
-    update_buffer(e, e->adc_sensor->value);
+    update_buffer(e, e->adc_sensor.value);
     if (is_triggered(e) && e->target) {
         trsync_do_trigger(e->ts, e->trigger_reason);
         return SF_DONE;
@@ -101,7 +101,7 @@ command_config_analog_probe(uint32_t *args)
 {
     struct analog_probe *e = oid_alloc(args[0], command_config_analog_probe, sizeof(*e));
     
-    e->adc_sensor->pin = gpio_adc_setup(args[1]);
+    e->adc_sensor.pin = gpio_adc_setup(args[1]);
     
     e->trigger_sup = args[3];
     e->trigger_inf = args[4];
@@ -134,29 +134,29 @@ void
 command_analog_probe_home(uint32_t *args)
 {
     struct analog_probe *e = oid_lookup(args[0], command_config_analog_probe);
-    sched_del_timer(&e->adc_sensor->timer);
-    gpio_adc_cancel_sample(e->adc_sensor->pin);
-    e->adc_sensor->next_begin_time = args[1];
-    e->adc_sensor->timer.waketime = e->adc_sensor->next_begin_time;
-    e->adc_sensor->sample_time = args[2];
-    e->adc_sensor->sample_count = args[3];
-    if (!e->adc_sensor->sample_count) {
+    sched_del_timer(&e->adc_sensor.timer);
+    gpio_adc_cancel_sample(e->adc_sensor.pin);
+    e->adc_sensor.next_begin_time = args[1];
+    e->adc_sensor.timer.waketime = e->adc_sensor.next_begin_time;
+    e->adc_sensor.sample_time = args[2];
+    e->adc_sensor.sample_count = args[3];
+    if (!e->adc_sensor.sample_count) {
         // Disable end stop checking
         e->ts = NULL;
         e->target = 0;
         return;
     }
-    e->adc_sensor->state = e->adc_sensor->sample_count + 1;
-    e->adc_sensor->rest_time = args[4];
-    e->adc_sensor->min_value = 0;
-    e->adc_sensor->max_value = 65535;
-    e->adc_sensor->range_check_count = 200;
-    e->adc_sensor->timer.func = analog_probe_event;
-    e->trigger_count = e->sample_count;
+    e->adc_sensor.state = e->adc_sensor.sample_count + 1;
+    e->adc_sensor.rest_time = args[4];
+    e->adc_sensor.min_value = 0;
+    e->adc_sensor.max_value = 65535;
+    e->adc_sensor.range_check_count = 200;
+    e->adc_sensor.timer.func = analog_probe_event;
+    //e->trigger_count = e->sample_count;
     e->target = args[5];
     e->ts = trsync_oid_lookup(args[6]);
     e->trigger_reason = args[7];
-    sched_add_timer(&e->adc_sensor->timer);
+    sched_add_timer(&e->adc_sensor.timer);
 }
 DECL_COMMAND(command_analog_probe_home,
              "analog_probe_home oid=%c clock=%u sample_ticks=%u sample_count=%c"
@@ -170,7 +170,7 @@ command_analog_probe_query_state(uint32_t *args)
 
     irq_disable();
     uint8_t targ = e->target;
-    uint32_t nextwake = e->adc_sensor->next_begin_time;
+    uint32_t nextwake = e->adc_sensor.next_begin_time;
     uint8_t trig = is_triggered(e);
     irq_enable();
 
@@ -214,7 +214,7 @@ command_set_threshold(uint32_t *args){
         e->auto_threshold = 0;
     } else {
         e->auto_threshold = 1;
-        e->args[3];
+        e->std_multiplier = args[3];
     }
 }
 DECL_COMMAND(command_set_threshold, "analog_probe_set_thresh oid=%c trig_th=%f auto_th=%c auto_std_mul=%f");

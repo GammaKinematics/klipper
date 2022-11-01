@@ -70,7 +70,7 @@ class AnalogProbe:
     cmd_UPDATE_THRESHOLD_help = "Update the threshold of the probe."
     cmd_PRINT_CURRENT_VALUES_help = "Print current probe values."
 
-    def _handle_mcu_identify(self):
+    def handle_mcu_identify(self):
         logging.info("handle_mcu checkpoint")
         kin = self.printer.lookup_object('toolhead').get_kinematics()
         for stepper in kin.get_steppers():

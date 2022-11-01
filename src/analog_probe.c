@@ -15,6 +15,20 @@
 
 #define ANALOG_PROBE_BUFFER_LENGTH 200
 
+#define TOL 0.000001
+
+double sqroot(double square)
+{
+    double root=square/3, last, diff=1;
+    if (square <= 0) return 0;
+    do {
+        last = root;
+        root = (root + square / root) / 2;
+        diff = root - last;
+    } while (diff > TOL || diff < -TOL);
+    return root;
+}
+
 struct analog_probe {
     struct gpio_adc pin;
 
@@ -213,9 +227,9 @@ command_do_tare(uint32_t *args) {
     if (probe->auto_threshold) {
         probe->threshold = 0.0;
         for (int i = probe->buffer_index-probe->tare_buffer_length+1; i <= probe->buffer_index; i++) {
-            probe->threshold += pow((probe->buffer[i]-probe->tare), 2);
+            probe->threshold += (probe->buffer[i]-probe->tare)*(probe->buffer[i]-probe->tare);
         }
-        probe->threshold = (probe->std_multiplier*sqrt(probe->threshold/probe->tare_buffer_length))/probe->tare;
+        probe->threshold = (probe->std_multiplier*sqroot(probe->threshold/probe->tare_buffer_length))/probe->tare;
     }
 }
 DECL_COMMAND(command_do_tare, "analog_probe_do_tare oid=%c");

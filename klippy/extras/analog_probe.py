@@ -1,5 +1,5 @@
 # Analog probe support
-
+import logging
 from . import probe
 
 
@@ -63,13 +63,15 @@ class AnalogProbe:
         self.gcode.register_command('MAKE_TARE',
                                     self.cmd_MAKE_TARE,
                                     desc=self.cmd_MAKE_TARE_help)
+        logging.info("Constructor done")
 
     cmd_UPDATE_BUFFER_LEN_help = "Update the lenght of the buffers."
     cmd_MAKE_TARE_help = "Tare the probe."
     cmd_UPDATE_THRESHOLD_help = "Update the threshold of the probe."
     cmd_PRINT_CURRENT_VALUES_help = "Print current probe values."
 
-    def handle_mcu_identify(self):
+    def _handle_mcu_identify(self):
+        logging.info("handle_mcu checkpoint")
         kin = self.printer.lookup_object('toolhead').get_kinematics()
         for stepper in kin.get_steppers():
             if stepper.is_active_axis('z'):
@@ -102,6 +104,7 @@ class AnalogProbe:
         self.mcu_endstop._update_buffer_cmd = self.mcu_endstop._mcu.lookup_command("analog_probe_update_buffer oid=%c tare_buf_len=%u cur_buf_len=%u", cq=cmd_queue)
         self.mcu_endstop._do_tare_cmd = self.mcu_endstop._mcu.lookup_command("analog_probe_do_tare oid=%c", cq=cmd_queue)
         self.mcu_endstop._set_threshold_cmd = self.mcu_endstop._mcu.lookup_command("analog_probe_set_thresh oid=%c trig_th=%u auto_th=%c auto_std_mul=%u", cq=cmd_queue)
+        logging.info("build_config checkpoint")
 
     def home_start(self, print_time, sample_time, sample_count, rest_time, triggered=True):
       self.mcu_endstop._do_tare_cmd.send([self.mcu_endstop._oid])

@@ -74,7 +74,7 @@ is_triggered(struct analog_probe *pr){
 }
 
 void 
-update_adc_sensor(struct analog_probbe *pr)
+update_adc_sensor(struct analog_probe *pr)
 {
     uint32_t sample_delay = gpio_adc_sample(pr->pin);
     if (sample_delay) {

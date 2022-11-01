@@ -28,11 +28,10 @@ static uint_fast8_t analog_in_event(struct timer *timer);
 struct analog_probe {
     struct analog_in adc_sensor;
 
-    bool trigger_sup;
-    bool trigger_inf;
+    uint8_t trigger_sup, trigger_inf;
     
     float threshold;
-    bool auto_threshold;
+    uint8_t auto_threshold;
     float std_multiplier;
 
     uint8_t tare_buffer_length, current_buffer_length, buffer_length, buffer_index;
@@ -66,17 +65,18 @@ update_buffer(struct analog_probe *e, const int16_t new_value) {
     }
 }
 
-bool 
+uint8_t 
 is_triggered(struct analog_probe *e){
+    uint8_t inf_trig, sup_trig;
     if (e->trigger_inf) {
-        bool inf_trig = e->current_value < ((1-e->threshold)*e->tare);
+        inf_trig = e->current_value < ((1-e->threshold)*e->tare);
     } else {
-        bool inf_trig = false;
+        inf_trig = 0;
     }
     if (e->trigger_sup) {
-        bool sup_trig = e->current_value > ((1+e->threshold)*e->tare);
+        sup_trig = e->current_value > ((1+e->threshold)*e->tare);
     } else {
-        bool sup_trig = false;
+        sup_trig = 0;
     }
     return inf_trig || sup_trig;
 }
@@ -169,7 +169,7 @@ command_analog_probe_query_state(uint32_t *args)
     irq_disable();
     uint8_t targ = e->target;
     uint32_t nextwake = e->adc_sensor->next_begin_time;
-    bool trig = is_triggered(e);
+    uint8_t trig = is_triggered(e);
     irq_enable();
 
     sendf("endstop_state oid=%c homing=%c next_clock=%u pin_value=%c"
@@ -209,9 +209,9 @@ command_set_threshold(uint32_t *args){
     struct analog_probe *e = oid_lookup(args[0], command_config_analog_probe);
     if (!args[2]) {
         e->threshold = args[1]/1000;
-        e->auto_threshold = false;
+        e->auto_threshold = 0;
     } else {
-        e->auto_threshold = true;
+        e->auto_threshold = 1;
         e->args[3];
     }
 }

@@ -17,7 +17,6 @@ class AnalogProbe:
         pin = config.get('pin')
         pin_params = ppins.lookup_pin(pin, can_invert=True, can_pullup=True)
         mcu = pin_params['chip']
-        pin_params['is_adc'] = True
         self.mcu_endstop = mcu.setup_pin('endstop', pin_params)
 
         # Parameters

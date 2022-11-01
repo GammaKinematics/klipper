@@ -6,7 +6,7 @@
 // This file may be distributed under the terms of the GNU GPLv3 license.
 
 #include "basecmd.h" // oid_alloc
-#include "adccmds.c"
+//#include "adccmds.c"
 #include "board/gpio.h" // struct gpio
 #include "board/irq.h" // irq_disable
 #include "command.h" // DECL_COMMAND
@@ -16,18 +16,15 @@
 
 #define ANALOG_PROBE_BUFFER_LENGTH 200
 
-// struct analog_in {
-//     struct timer timer;
-//     uint32_t rest_time, sample_time, next_begin_time;
-//     uint16_t value, min_value, max_value;
-//     struct gpio_adc pin;
-//     uint8_t invalid_count, range_check_count;
-//     uint8_t state, sample_count;
-// };
-// static uint_fast8_t analog_in_event(struct timer *timer);
-
 struct analog_probe {
     struct analog_in adc_sensor;
+
+    // struct timer timer;
+    // uint32_t rest_time, sample_time, next_begin_time;
+    // uint16_t value, min_value, max_value;
+    // struct gpio_adc pin;
+    // uint8_t invalid_count, range_check_count;
+    // uint8_t state, sample_count;
 
     uint8_t trigger_sup, trigger_inf;
     

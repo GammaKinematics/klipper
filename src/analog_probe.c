@@ -100,7 +100,7 @@ command_config_analog_probe(uint32_t *args)
 {
     struct analog_probe *e = oid_alloc(args[0], command_config_analog_probe, sizeof(*e));
     
-    e->pin = gpio_adc_setup(args[1], args[2]);
+    e->pin = gpio_adc_setup(args[1]);
     
     e->trigger_sup = args[3];
     e->trigger_inf = args[4];

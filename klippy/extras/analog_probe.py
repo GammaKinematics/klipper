@@ -76,12 +76,12 @@ class AnalogProbe:
     def _build_config(self):
         # Setup config
         self.mcu_endstop._mcu.add_config_cmd("config_analog_probe oid=%d pin=%s pull_up=%d" 
-                                             " trig_sup=%c trig_inf=%c trig_th=%f"
-                                             " auto_th=%c auto_std_mul=%f"
+                                             " trig_sup=%c trig_inf=%c trig_th=%u"
+                                             " auto_th=%c auto_std_mul=%u"
                                              " tare_buf_len=%u cur_buf_len=%u"
                                              % (self.mcu_endstop._oid, self.mcu_endstop._pin, self.mcu_endstop._pullup,
-                                                self.trigger_sup, self.trigger_inf, self.threshold,
-                                                self.auto_threshold, self.auto_std_multiplier,
+                                                self.trigger_sup, self.trigger_inf, int(self.threshold*10),
+                                                self.auto_threshold, int(self.auto_std_multiplier*100),
                                                 self.tare_buffer_len, self.current_buffer_len))
         self.mcu_endstop._mcu.add_config_cmd(
             "analog_probe_home oid=%d clock=0 sample_ticks=0 sample_count=0"
@@ -99,7 +99,7 @@ class AnalogProbe:
             oid=self.mcu_endstop._oid, cq=cmd_queue)
         self.mcu_endstop._update_buffer_cmd = self.mcu_endstop._mcu.lookup_command("analog_probe_update_buffer oid=%c tare_buf_len=%u cur_buf_len=%u", cq=cmd_queue)
         self.mcu_endstop._do_tare_cmd = self.mcu_endstop._mcu.lookup_command("analog_probe_do_tare oid=%c", cq=cmd_queue)
-        self.mcu_endstop._set_threshold_cmd = self.mcu_endstop._mcu.lookup_command("analog_probe_set_thresh oid=%c trig_th=%c auto_th=%c auto_std_mul=%c", cq=cmd_queue)
+        self.mcu_endstop._set_threshold_cmd = self.mcu_endstop._mcu.lookup_command("analog_probe_set_thresh oid=%c trig_th=%u auto_th=%c auto_std_mul=%u", cq=cmd_queue)
 
     def home_start(self, print_time, sample_time, sample_count, rest_time, triggered=True):
       self.mcu_endstop._do_tare_cmd.send([self.mcu_endstop._oid])
@@ -119,7 +119,7 @@ class AnalogProbe:
             self.auto_std_multiplier = gcmd.get_float("STD_MULTIPLIER", 5.0)
         else:
             self.threshold = gcmd.get_float("THRESHOLD", 0.5)
-        self.mcu_endstop._set_threshold_cmd.send([self.mcu_endstop._oid, self.threshold, self.auto_threshold, self.auto_std_multiplier])
+        self.mcu_endstop._set_threshold_cmd.send([self.mcu_endstop._oid, int(self.threshold*10), self.auto_threshold, int(self.auto_std_multiplier*100)])
 
     def cmd_PRINT_CURRENT_VALUES(self, gcmd):
         gcmd.respond_info("Raw: %.1f, Current: %.1f, Tare: %.1f, Threshold: %.1f" %           \

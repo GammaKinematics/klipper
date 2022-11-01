@@ -123,9 +123,9 @@ command_config_analog_probe(uint32_t *args)
     probe->trigger_sup = args[3];
     probe->trigger_inf = args[4];
 
-    probe->threshold = args[5];
+    probe->threshold = (float)args[5]/10;
     probe->auto_threshold = args[6];
-    probe->std_multiplier = args[7];
+    probe->std_multiplier = (float)args[7]/100;
 
     if (args[7] < sizeof(probe->buffer)/sizeof(uint16_t)) {
         probe->tare_buffer_length = args[8];
@@ -143,8 +143,8 @@ command_config_analog_probe(uint32_t *args)
     probe->current_value = 0.0;
 }
 DECL_COMMAND(command_config_analog_probe, "config_analog_probe oid=%c pin=%c pull_up=%c" 
-                                          " trig_sup=%c trig_inf=%c trig_th=%f"
-                                          " auto_th=%c auto_std_mul=%f"
+                                          " trig_sup=%c trig_inf=%c trig_th=%u"
+                                          " auto_th=%c auto_std_mul=%u"
                                           " tare_buf_len=%u cur_buf_len=%u");
 
 void
@@ -224,11 +224,11 @@ void
 command_set_threshold(uint32_t *args){
     struct analog_probe *probe = oid_lookup(args[0], command_config_analog_probe);
     if (!args[2]) {
-        probe->threshold = args[1]/1000;
+        probe->threshold = float()args[1]/10;
         probe->auto_threshold = 0;
     } else {
         probe->auto_threshold = 1;
-        probe->std_multiplier = args[3];
+        probe->std_multiplier = (float)args[3]/100;
     }
 }
-DECL_COMMAND(command_set_threshold, "analog_probe_set_thresh oid=%c trig_th=%f auto_th=%c auto_std_mul=%f");
+DECL_COMMAND(command_set_threshold, "analog_probe_set_thresh oid=%c trig_th=%u auto_th=%c auto_std_mul=%u");

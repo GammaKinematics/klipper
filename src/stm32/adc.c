@@ -67,9 +67,9 @@ adc_calibrate(ADC_TypeDef *adc)
         ;
 #endif
 }
-
+    
 struct gpio_adc
-gpio_adc_setup(uint32_t pin)
+gpio_adc_setup(uint32_t pin, int32_t pull_up)
 {
     // Find pin in adc_pins table
     int chan;
@@ -114,7 +114,7 @@ gpio_adc_setup(uint32_t pin)
         ADC123_COMMON->CCR = ADC_CCR_TSVREFE;
 #endif
     } else {
-        gpio_peripheral(pin, GPIO_ANALOG, 0);
+        gpio_peripheral(pin, GPIO_ANALOG, (pull_up ? pull_up: 0));
     }
 
     return (struct gpio_adc){ .adc = adc, .chan = chan };

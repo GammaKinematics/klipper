@@ -31,7 +31,7 @@ struct gpio_adc {
     void *adc;
     uint32_t chan;
 };
-struct gpio_adc gpio_adc_setup(uint32_t pin);
+struct gpio_adc gpio_adc_setup(uint32_t pin, int32_t pull_up);
 uint32_t gpio_adc_sample(struct gpio_adc g);
 uint16_t gpio_adc_read(struct gpio_adc g);
 void gpio_adc_cancel_sample(struct gpio_adc g);

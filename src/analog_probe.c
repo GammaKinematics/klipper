@@ -116,7 +116,7 @@ analog_probe_event(struct timer *t)
 void
 command_config_analog_probe(uint32_t *args)
 {
-    struct analog_probe *probe = oid_alloc(args[0], command_config_analog_probe, sizeof(*e));
+    struct analog_probe *probe = oid_alloc(args[0], command_config_analog_probe, sizeof(*probe));
     
     probe->pin = gpio_adc_setup(args[1]);
     

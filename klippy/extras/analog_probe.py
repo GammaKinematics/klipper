@@ -6,8 +6,8 @@ from . import probe
 class AnalogProbe:
     def __init__(self, config):
         self.printer = config.get_printer()
-        self.printer.register_event_handler("klippy:connect",
-                                            self.handle_connect)
+        # self.printer.register_event_handler("klippy:connect",
+        #                                     self.handle_connect)
         self.printer.register_event_handler('klippy:mcu_identify',
                                             self.handle_mcu_identify)
         self.position_endstop = config.getfloat('z_offset', minval=0.)
@@ -30,9 +30,6 @@ class AnalogProbe:
 
         self.tare_buffer_len = config.getint('tare_buffer_len', 100)
         self.current_buffer_len = config.getint('current_buffer_len', 5)
-        self.buffer_len = max(self.tare_buffer_len, self.current_buffer_len)
-        self.buffer = []
-        self.buffer_index = 0
 
         self.current_raw_value = 0.0
         self.current_value = 0.0
@@ -72,6 +69,12 @@ class AnalogProbe:
     cmd_MAKE_TARE_help = "Tare the probe."
     cmd_UPDATE_THRESHOLD_help = "Update the threshold of the probe."
     cmd_PRINT_CURRENT_VALUES_help = "Print current probe values."
+
+    def handle_mcu_identify(self):
+        kin = self.printer.lookup_object('toolhead').get_kinematics()
+        for stepper in kin.get_steppers():
+            if stepper.is_active_axis('z'):
+                self.add_stepper(stepper)
 
     def _build_config(self):
         # Setup config

@@ -12,6 +12,7 @@
 #include "command.h" // DECL_COMMAND
 #include "sched.h" // struct timer
 #include "trsync.h" // trsync_do_trigger
+#include <math.h>
 
 #define ANALOG_PROBE_BUFFER_LENGTH 200
 
@@ -26,7 +27,7 @@
 // static uint_fast8_t analog_in_event(struct timer *timer);
 
 struct analog_probe {
-    struct analog_in adc_sensor;
+    struct analog_in* adc_sensor;
 
     uint8_t trigger_sup, trigger_inf;
     
@@ -132,18 +133,19 @@ DECL_COMMAND(command_config_analog_probe, "config_analog_probe oid=%c pin=%c pul
 void
 command_analog_probe_home(uint32_t *args)
 {
-    struct analog_probe *e = oid_lookup(args[0], command_config_analog_probe)
+    struct analog_probe *e = oid_lookup(args[0], command_config_analog_probe);
     sched_del_timer(&e->adc_sensor->timer);
     gpio_adc_cancel_sample(e->adc_sensor->pin);
     e->adc_sensor->next_begin_time = args[1];
     e->adc_sensor->timer.waketime = e->adc_sensor->next_begin_time;
     e->adc_sensor->sample_time = args[2];
     e->adc_sensor->sample_count = args[3];
-    if (!e->adc_sensor->sample_count)
+    if (!e->adc_sensor->sample_count) {
         // Disable end stop checking
         e->ts = NULL;
         e->target = 0;
         return;
+    }
     e->adc_sensor->state = e->adc_sensor->sample_count + 1;
     e->adc_sensor->rest_time = args[4];
     e->adc_sensor->min_value = 0;
@@ -197,9 +199,9 @@ command_do_tare(uint32_t *args) {
     if (e->auto_threshold) {
         e->threshold = 0.0;
         for (int i = e->buffer_index-e->tare_buffer_length+1; i <= e->buffer_index; i++) {
-            e->threshold += sq(e->buffer[i]-e->tare);
+            e->threshold += pow((e->buffer[i]-e->tare), 2);
         }
-        e->threshold = (e->std_multiplier*SQRT(e->threshold/e->tare_buffer_length))/e->tare;
+        e->threshold = (e->std_multiplier*sqrt(e->threshold/e->tare_buffer_length))/e->tare;
     }
 }
 DECL_COMMAND(command_do_tare, "analog_probe_do_tare oid=%c");

@@ -93,13 +93,16 @@ class AnalogProbe:
 
     def config_callbacks(self):
         # Setup config
+        trig_sup = 1
+        trig_inf = 0
+        auto_th = 1
         self.mcu_endstop._mcu.add_config_cmd("config_analog_probe oid=%d pin=%s" 
                                              " trig_sup=%c trig_inf=%c trig_th=%u"
                                              " auto_th=%c auto_std_mul=%u"
                                              " tare_buf_len=%u cur_buf_len=%u"
                                              % (self.mcu_endstop._oid, self.mcu_endstop._pin,
-                                                self.trigger_sup*1, self.trigger_inf*1, int(self.threshold*10),
-                                                self.auto_threshold*1, int(self.auto_std_multiplier*100),
+                                                trig_sup, trig_inf, int(self.threshold*10),
+                                                auto_th, int(self.auto_std_multiplier*100),
                                                 self.tare_buffer_len, self.current_buffer_len))
         self.mcu_endstop._mcu.add_config_cmd(
             "analog_probe_home oid=%d clock=0 sample_ticks=0 sample_count=0"

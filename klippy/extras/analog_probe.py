@@ -41,7 +41,7 @@ class AnalogProbe:
         logging.info("CPGK std mul: %s", str(self.auto_std_multiplier))
         logging.info("CPGK tare buf: %s", str(self.tare_buffer_len))
         logging.info("CPGK cur buf: %s", str(self.current_buffer_len))
-        
+
         # Create an "endstop" object to handle the sensor pin
         ppins = self.printer.lookup_object('pins')
         pin = config.get('pin')
@@ -49,7 +49,7 @@ class AnalogProbe:
         mcu = pin_params['chip']
         pin_params['is_adc'] = True
         self.mcu_endstop = mcu.setup_pin('endstop', pin_params)
-        self.mcu_endstop._mcu.register_config_callback(self.config_callbacks)
+        mcu.register_config_callback(self.config_callbacks) #self.mcu_endstop._
 
         # Wrappers
         self.get_mcu = self.mcu_endstop.get_mcu

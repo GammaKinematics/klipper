@@ -5,6 +5,7 @@ from . import probe
 
 class AnalogProbe:
     def __init__(self, config):
+        logging.info("CPGK Constructor started")
         self.printer = config.get_printer()
         # self.printer.register_event_handler("klippy:connect",
         #                                     self.handle_connect)
@@ -33,8 +34,14 @@ class AnalogProbe:
         self.current_raw_value = 0.0
         self.current_value = 0.0
         self.tare = 0.0
-        logging.info("%c , %c , %c , %c , %c , %c , %c", str(int(self.trigger_sup)), str(int(self.trigger_inf)), str(self.threshold), str(int(self.auto_threshold)), str(self.auto_std_multiplier), str(self.tare_buffer_len), str(self.current_buffer_len))
-
+        logging.info("CPGK trig sup: %s", str(int(self.trigger_sup)))
+        logging.info("CPGK trig inf: %s", str(int(self.trigger_inf)))
+        logging.info("CPGK thresh: %s", str(self.threshold))
+        logging.info("CPGK auto thresh: %s", str(int(self.auto_threshold)))
+        logging.info("CPGK std mul: %s", str(self.auto_std_multiplier))
+        logging.info("CPGK tare buf: %s", str(self.tare_buffer_len))
+        logging.info("CPGK cur buf: %s", str(self.current_buffer_len))
+        
         # Create an "endstop" object to handle the sensor pin
         ppins = self.printer.lookup_object('pins')
         pin = config.get('pin')

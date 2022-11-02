@@ -19,15 +19,6 @@ class AnalogProbe:
         self.deactivate_gcode = gcode_macro.load_template(
             config, 'deactivate_gcode', '')
 
-        # Create an "endstop" object to handle the sensor pin
-        ppins = self.printer.lookup_object('pins')
-        pin = config.get('pin')
-        pin_params = ppins.lookup_pin(pin, can_invert=True, can_pullup=True)
-        mcu = pin_params['chip']
-        pin_params['is_adc'] = True
-        self.mcu_endstop = mcu.setup_pin('endstop', pin_params)
-        self.mcu_endstop._mcu.register_config_callback(self.config_callbacks)
-
         # Parameters
         self.trigger_sup = config.getboolean('trigger_sup', True)
         self.trigger_inf = config.getboolean('trigger_inf', True)
@@ -42,7 +33,16 @@ class AnalogProbe:
         self.current_raw_value = 0.0
         self.current_value = 0.0
         self.tare = 0.0
-        
+
+        # Create an "endstop" object to handle the sensor pin
+        ppins = self.printer.lookup_object('pins')
+        pin = config.get('pin')
+        pin_params = ppins.lookup_pin(pin, can_invert=True, can_pullup=True)
+        mcu = pin_params['chip']
+        pin_params['is_adc'] = True
+        self.mcu_endstop = mcu.setup_pin('endstop', pin_params)
+        self.mcu_endstop._mcu.register_config_callback(self.config_callbacks)
+
         # Wrappers
         self.get_mcu = self.mcu_endstop.get_mcu
         self.add_stepper = self.mcu_endstop.add_stepper

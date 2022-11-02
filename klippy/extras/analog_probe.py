@@ -18,6 +18,7 @@ class AnalogProbe:
         pin_params = ppins.lookup_pin(pin, can_invert=True, can_pullup=True)
         mcu = pin_params['chip']
         self.mcu_endstop = mcu.setup_pin('endstop', pin_params)
+        self.mcu_endstop._mcu.register_config_callback(self.config_callbacks)
 
         # Parameters
         self.trigger_sup = config.getboolean('trigger_sup', True)
@@ -41,14 +42,6 @@ class AnalogProbe:
         self.home_wait = self.mcu_endstop.home_wait
         self.query_endstop = self.mcu_endstop.query_endstop
 
-        # # Register BLTOUCH_DEBUG command
-        # self.gcode = self.printer.lookup_object('gcode')
-        # self.gcode.register_command("BLTOUCH_DEBUG", self.cmd_BLTOUCH_DEBUG,
-        #                             desc=self.cmd_BLTOUCH_DEBUG_help)
-        # self.gcode.register_command("BLTOUCH_STORE", self.cmd_BLTOUCH_STORE,
-        #                             desc=self.cmd_BLTOUCH_STORE_help)
-        # register gcode commands
-
         self.gcode = self.printer.lookup_object('gcode')
         self.gcode.register_command('UPDATE_THRESHOLD', self.cmd_UPDATE_THRESHOLD,
                                     desc=self.cmd_UPDATE_THRESHOLD_help)
@@ -63,7 +56,7 @@ class AnalogProbe:
         self.gcode.register_command('MAKE_TARE',
                                     self.cmd_MAKE_TARE,
                                     desc=self.cmd_MAKE_TARE_help)
-        logging.info("Constructor done")
+        logging.info("CPGK Constructor done")
 
     cmd_UPDATE_BUFFER_LEN_help = "Update the lenght of the buffers."
     cmd_MAKE_TARE_help = "Tare the probe."
@@ -71,13 +64,13 @@ class AnalogProbe:
     cmd_PRINT_CURRENT_VALUES_help = "Print current probe values."
 
     def handle_mcu_identify(self):
-        logging.info("handle_mcu checkpoint")
+        logging.info("CPGK handle_mcu checkpoint")
         kin = self.printer.lookup_object('toolhead').get_kinematics()
         for stepper in kin.get_steppers():
             if stepper.is_active_axis('z'):
                 self.add_stepper(stepper)
 
-    def _build_config(self):
+    def config_callbacks(self):
         # Setup config
         self.mcu_endstop._mcu.add_config_cmd("config_analog_probe oid=%d pin=%s pull_up=%d" 
                                              " trig_sup=%c trig_inf=%c trig_th=%u"
@@ -104,7 +97,7 @@ class AnalogProbe:
         self.mcu_endstop._update_buffer_cmd = self.mcu_endstop._mcu.lookup_command("analog_probe_update_buffer oid=%c tare_buf_len=%u cur_buf_len=%u", cq=cmd_queue)
         self.mcu_endstop._do_tare_cmd = self.mcu_endstop._mcu.lookup_command("analog_probe_do_tare oid=%c", cq=cmd_queue)
         self.mcu_endstop._set_threshold_cmd = self.mcu_endstop._mcu.lookup_command("analog_probe_set_thresh oid=%c trig_th=%u auto_th=%c auto_std_mul=%u", cq=cmd_queue)
-        logging.info("build_config checkpoint")
+        logging.info("CPGK build_config checkpoint")
 
     def home_start(self, print_time, sample_time, sample_count, rest_time, triggered=True):
       self.mcu_endstop._do_tare_cmd.send([self.mcu_endstop._oid])

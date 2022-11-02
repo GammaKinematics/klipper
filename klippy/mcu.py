@@ -137,7 +137,9 @@ class MCU_endstop:
         self._invert = pin_params['invert']
         self._oid = self._mcu.create_oid()
         self._home_cmd = self._query_cmd = None
-        self._mcu.register_config_callback(self._build_config)
+        if not pin_params.get('is_adc', False):
+            logging.info("CPGK original callbback applied 1")
+            self._mcu.register_config_callback(self._build_config)
         self._trigger_completion = None
         self._rest_ticks = 0
         ffi_main, ffi_lib = chelper.get_ffi()

@@ -10,13 +10,21 @@ class AnalogProbe:
         #                                     self.handle_connect)
         self.printer.register_event_handler('klippy:mcu_identify',
                                             self.handle_mcu_identify)
-        self.position_endstop = config.getfloat('z_offset', minval=0.)
+        self.position_endstop = config.getfloat('z_offset')
+        self.stow_on_each_sample = config.getboolean(
+            'deactivate_on_each_sample', True)
+        gcode_macro = self.printer.load_object(config, 'gcode_macro')
+        self.activate_gcode = gcode_macro.load_template(
+            config, 'activate_gcode', '')
+        self.deactivate_gcode = gcode_macro.load_template(
+            config, 'deactivate_gcode', '')
 
         # Create an "endstop" object to handle the sensor pin
         ppins = self.printer.lookup_object('pins')
         pin = config.get('pin')
         pin_params = ppins.lookup_pin(pin, can_invert=True, can_pullup=True)
         mcu = pin_params['chip']
+        pin_params['is_adc'] = True
         self.mcu_endstop = mcu.setup_pin('endstop', pin_params)
         self.mcu_endstop._mcu.register_config_callback(self.config_callbacks)
 
@@ -42,6 +50,7 @@ class AnalogProbe:
         self.home_wait = self.mcu_endstop.home_wait
         self.query_endstop = self.mcu_endstop.query_endstop
 
+        # Register analog commands
         self.gcode = self.printer.lookup_object('gcode')
         self.gcode.register_command('UPDATE_THRESHOLD', self.cmd_UPDATE_THRESHOLD,
                                     desc=self.cmd_UPDATE_THRESHOLD_help)
@@ -56,6 +65,10 @@ class AnalogProbe:
         self.gcode.register_command('MAKE_TARE',
                                     self.cmd_MAKE_TARE,
                                     desc=self.cmd_MAKE_TARE_help)
+
+        # multi probes state
+        self.multi = 'OFF'
+
         logging.info("CPGK Constructor done")
 
     cmd_UPDATE_BUFFER_LEN_help = "Update the lenght of the buffers."
@@ -102,6 +115,46 @@ class AnalogProbe:
     def home_start(self, print_time, sample_time, sample_count, rest_time, triggered=True):
       self.mcu_endstop._do_tare_cmd.send([self.mcu_endstop._oid])
       return self.mcu_endstop.home_start(print_time, sample_time, sample_count, rest_time, triggered)
+
+    def raise_probe(self): #modifs
+        toolhead = self.printer.lookup_object('toolhead')
+        start_pos = toolhead.get_position()
+        self.deactivate_gcode.run_gcode_from_command()
+        if toolhead.get_position()[:3] != start_pos[:3]:
+            raise self.printer.command_error(
+                "Toolhead moved during probe activate_gcode script")
+
+    def lower_probe(self): #modifs
+        toolhead = self.printer.lookup_object('toolhead')
+        start_pos = toolhead.get_position()
+        self.activate_gcode.run_gcode_from_command()
+        if toolhead.get_position()[:3] != start_pos[:3]:
+            raise self.printer.command_error(
+                "Toolhead moved during probe deactivate_gcode script")
+
+    def multi_probe_begin(self):
+        if self.stow_on_each_sample:
+            return
+        self.multi = 'FIRST'
+
+    def multi_probe_end(self):
+        if self.stow_on_each_sample:
+            return
+        self.raise_probe()
+        self.multi = 'OFF'
+
+    def probe_prepare(self, hmove):
+        if self.multi == 'OFF' or self.multi == 'FIRST':
+            self.lower_probe()
+            if self.multi == 'FIRST':
+                self.multi = 'ON'
+
+    def probe_finish(self, hmove):
+        if self.multi == 'OFF':
+            self.raise_probe()
+
+    def get_position_endstop(self):
+        return self.position_endstop
 
     def cmd_UPDATE_BUFFER_LEN(self, gcmd):
         self.tare_buffer_len = gcmd.get_int("TARE", 100)

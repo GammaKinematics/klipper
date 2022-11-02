@@ -33,6 +33,7 @@ class AnalogProbe:
         self.current_raw_value = 0.0
         self.current_value = 0.0
         self.tare = 0.0
+        logging.info("%c , %c , %c , %c , %c , %c , %c", str(int(self.trigger_sup)), str(int(self.trigger_inf)), str(self.threshold), str(int(self.auto_threshold)), str(self.auto_std_multiplier), str(self.tare_buffer_len), str(self.current_buffer_len))
 
         # Create an "endstop" object to handle the sensor pin
         ppins = self.printer.lookup_object('pins')

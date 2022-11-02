@@ -97,8 +97,8 @@ class AnalogProbe:
         trig_inf = 0
         auto_th = 1
         self.mcu_endstop._mcu.add_config_cmd("config_analog_probe oid=%d pin=%s" 
-                                             " trig_sup=%c trig_inf=%c trig_th=%u"
-                                             " auto_th=%c auto_std_mul=%u"
+                                             " trig_sup=%u trig_inf=%u trig_th=%u"
+                                             " auto_th=%u auto_std_mul=%u"
                                              " tare_buf_len=%u cur_buf_len=%u"
                                              % (self.mcu_endstop._oid, self.mcu_endstop._pin,
                                                 trig_sup, trig_inf, int(self.threshold*10),

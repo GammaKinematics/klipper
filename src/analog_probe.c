@@ -157,8 +157,8 @@ command_config_analog_probe(uint32_t *args)
     probe->current_value = 0.0;
 }
 DECL_COMMAND(command_config_analog_probe, "config_analog_probe oid=%c pin=%c" 
-                                          " trig_sup=%c trig_inf=%c trig_th=%u"
-                                          " auto_th=%c auto_std_mul=%u"
+                                          " trig_sup=%u trig_inf=%u trig_th=%u"
+                                          " auto_th=%u auto_std_mul=%u"
                                           " tare_buf_len=%u cur_buf_len=%u");
 
 void
@@ -245,4 +245,24 @@ command_set_threshold(uint32_t *args){
         probe->std_multiplier = (double)args[3]/100;
     }
 }
-DECL_COMMAND(command_set_threshold, "analog_probe_set_thresh oid=%c trig_th=%u auto_th=%c auto_std_mul=%u");
+DECL_COMMAND(command_set_threshold, "analog_probe_set_thresh oid=%c trig_th=%u auto_th=%u auto_std_mul=%u");
+
+void 
+command_report(uint32_t *args) {
+    struct analog_probe *probe = oid_lookup(args[0], command_config_analog_probe);
+    
+    irq_disable();
+    double thresh = probe->threshold;
+    uint8_t auto_thresh = probe->auto_threshold;
+    double std_mul = probe->std_multiplier;
+    uint8_t tare_buf = probe->tare_buffer_length;
+    uint8_t cur_buf = probe->current_buffer_length;
+    uint16_t raw = probe->raw_value;
+    double cur = probe->current_value;
+    double tar = probe->tare;
+    irq_enable();
+
+    sendf("analog_probe_state oid=%c raw=%u cur=%u tare=%u thresh=%u auto_th=%u std_mul=%u tare_buf=%u cur_buf=%u"
+          , args[0], raw, (int)cur*1000, (int)tare*1000, (int)thresh*1000, auto_thresh, (int)std_mul*100, tare_buf, cur_buf);
+}
+DECL_COMMAND(command_report, "analog_probe_query_state oid=%c");

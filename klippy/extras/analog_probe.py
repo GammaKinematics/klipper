@@ -31,9 +31,6 @@ class AnalogProbe:
         self.tare_buffer_len = config.getint('tare_buffer_len', 100)
         self.current_buffer_len = config.getint('current_buffer_len', 5)
 
-        self.current_raw_value = 0.0
-        self.current_value = 0.0
-        self.tare = 0.0
         logging.info("CPGK trig sup: %s", str(int(self.trigger_sup)))
         logging.info("CPGK trig inf: %s", str(int(self.trigger_inf)))
         logging.info("CPGK thresh: %s", str(self.threshold))
@@ -66,10 +63,6 @@ class AnalogProbe:
         self.gcode.register_command('UPDATE_BUFFER_LEN', self.cmd_UPDATE_BUFFER_LEN,
                                     desc=self.cmd_UPDATE_BUFFER_LEN_help)
 
-        self.gcode.register_command('PRINT_CURRENT_VALUES',
-                                    self.cmd_PRINT_CURRENT_VALUES,
-                                    desc=self.cmd_PRINT_CURRENT_VALUES_help)
-
         self.gcode.register_command('MAKE_TARE',
                                     self.cmd_MAKE_TARE,
                                     desc=self.cmd_MAKE_TARE_help)
@@ -82,7 +75,6 @@ class AnalogProbe:
     cmd_UPDATE_BUFFER_LEN_help = "Update the lenght of the buffers."
     cmd_MAKE_TARE_help = "Tare the probe."
     cmd_UPDATE_THRESHOLD_help = "Update the threshold of the probe."
-    cmd_PRINT_CURRENT_VALUES_help = "Print current probe values."
 
     def handle_mcu_identify(self):
         logging.info("CPGK handle_mcu checkpoint")
@@ -93,16 +85,13 @@ class AnalogProbe:
 
     def config_callbacks(self):
         # Setup config
-        trig_sup = 1
-        trig_inf = 0
-        auto_th = 1
         self.mcu_endstop._mcu.add_config_cmd("config_analog_probe oid=%d pin=%s" 
                                              " trig_sup=%u trig_inf=%u trig_th=%u"
                                              " auto_th=%u auto_std_mul=%u"
                                              " tare_buf_len=%u cur_buf_len=%u"
                                              % (self.mcu_endstop._oid, self.mcu_endstop._pin,
-                                                trig_sup, trig_inf, int(self.threshold*10),
-                                                auto_th, int(self.auto_std_multiplier*100),
+                                                self.trigger_sup*1, self.trigger_inf*1, int(self.threshold*10),
+                                                self.auto_threshold*1, int(self.auto_std_multiplier*100),
                                                 self.tare_buffer_len, self.current_buffer_len))
         self.mcu_endstop._mcu.add_config_cmd(
             "analog_probe_home oid=%d clock=0 sample_ticks=0 sample_count=0"
@@ -120,7 +109,10 @@ class AnalogProbe:
             oid=self.mcu_endstop._oid, cq=cmd_queue)
         self.mcu_endstop._update_buffer_cmd = self.mcu_endstop._mcu.lookup_command("analog_probe_update_buffer oid=%c tare_buf_len=%u cur_buf_len=%u", cq=cmd_queue)
         self.mcu_endstop._do_tare_cmd = self.mcu_endstop._mcu.lookup_command("analog_probe_do_tare oid=%c", cq=cmd_queue)
-        self.mcu_endstop._set_threshold_cmd = self.mcu_endstop._mcu.lookup_command("analog_probe_set_thresh oid=%c trig_th=%u auto_th=%c auto_std_mul=%u", cq=cmd_queue)
+        self.mcu_endstop._set_threshold_cmd = self.mcu_endstop._mcu.lookup_command("analog_probe_set_thresh oid=%c trig_th=%u auto_th=%u auto_std_mul=%u", cq=cmd_queue)
+        self.mcu_endstop._report_cmd = self.mcu_endstop._mcu.lookup_query_command("analog_probe_query_state oid=%c", 
+                                                                                  "analog_probe_state oid=%c raw=%u cur=%u tare=%u thresh=%u auto_th=%u std_mul=%u tare_buf=%u cur_buf=%u",
+                                                                                  oid=self.mcu_endstop._oid, cq=cmd_queue)
         logging.info("CPGK build_config checkpoint")
 
     def home_start(self, print_time, sample_time, sample_count, rest_time, triggered=True):
@@ -176,16 +168,31 @@ class AnalogProbe:
         self.mcu_endstop._do_tare_cmd.send([self.mcu_endstop._oid])
 
     def cmd_UPDATE_THRESHOLD(self, gcmd):
-        self.auto_threshold = gcmd.get_boolean("AUTO", True)
+        self.auto_threshold = bool(gcmd.get_int("AUTO", True))
         if self.auto_threshold:
             self.auto_std_multiplier = gcmd.get_float("STD_MULTIPLIER", 5.0)
         else:
             self.threshold = gcmd.get_float("THRESHOLD", 0.5)
         self.mcu_endstop._set_threshold_cmd.send([self.mcu_endstop._oid, int(self.threshold*10), self.auto_threshold*1, int(self.auto_std_multiplier*100)])
 
-    def cmd_PRINT_CURRENT_VALUES(self, gcmd):
-        gcmd.respond_info("Raw: %.1f, Current: %.1f, Tare: %.1f, Threshold: %.1f" %           \
-                          (self.current_raw_value, self.current_value, self.tare, self.threshold))
+    def cmd_QUERY_STATE(self, gcmd):
+        params = self.mcu_endstop._report_cmd.send([self.mcu_endstop._oid])
+        
+        self.threshold = float(params['thresh'])/1000
+        self.auto_threshold = bool(params['auto_th'])
+        self.auto_std_multiplier = float(params['std_mul'])/100
+        self.tare_buffer_len = params['tare_buf']
+        self.current_buffer_len = params['cur_buf']
+        
+        gcmd.respond_info("Raw: %i, Cur: %f, Tare: %f, Thresh: %f" % (params['raw'], 
+                                                                      float(params['cur'])/1000,
+                                                                      float(params['tare'])/1000,
+                                                                      self.threshold))
+        gcmd.respond_info("Auto: %i, Std mul: %f, Tare buf: %i, Cur buf: %i" % (self.auto_threshold*1, 
+                                                                                self.auto_std_multiplier,
+                                                                                self.tare_buffer_len,
+                                                                                self.current_buffer_len))
+
 
 def load_config(config):
     analog_probe = AnalogProbe(config)

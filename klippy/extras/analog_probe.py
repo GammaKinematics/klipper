@@ -66,6 +66,10 @@ class AnalogProbe:
         self.gcode.register_command('MAKE_TARE',
                                     self.cmd_MAKE_TARE,
                                     desc=self.cmd_MAKE_TARE_help)
+        
+        self.gcode.register_command('QUERY_STATE',
+                                    self.cmd_QUERY_STATE,
+                                    desc=self.cmd_MAKE_TARE_help)
 
         # multi probes state
         self.multi = 'OFF'

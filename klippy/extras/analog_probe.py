@@ -110,8 +110,8 @@ class AnalogProbe:
         self.mcu_endstop._update_buffer_cmd = self.mcu_endstop._mcu.lookup_command("analog_probe_update_buffer oid=%c tare_buf_len=%u cur_buf_len=%u", cq=cmd_queue)
         self.mcu_endstop._do_tare_cmd = self.mcu_endstop._mcu.lookup_command("analog_probe_do_tare oid=%c", cq=cmd_queue)
         self.mcu_endstop._set_threshold_cmd = self.mcu_endstop._mcu.lookup_command("analog_probe_set_thresh oid=%c trig_th=%u auto_th=%u auto_std_mul=%u", cq=cmd_queue)
-        self.mcu_endstop._report_cmd = self.mcu_endstop._mcu.lookup_query_command("analog_probe_query_state oid=%c", 
-                                                                                  "analog_probe_state oid=%c raw=%u cur=%u tare=%u thresh=%u auto_th=%u std_mul=%u tare_buf=%u cur_buf=%u",
+        self.mcu_endstop._report_cmd = self.mcu_endstop._mcu.lookup_query_command("analog_probe_query_report oid=%c", 
+                                                                                  "analog_probe_report oid=%c raw=%u cur=%u tare=%u thresh=%u auto_th=%u std_mul=%u tare_buf=%u cur_buf=%u",
                                                                                   oid=self.mcu_endstop._oid, cq=cmd_queue)
         logging.info("CPGK build_config checkpoint")
 

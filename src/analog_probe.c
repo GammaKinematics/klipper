@@ -262,7 +262,7 @@ command_report(uint32_t *args) {
     uint8_t cur_buf = probe->current_buffer_length;
     irq_enable();
 
-    sendf("analog_probe_state oid=%c raw=%u cur=%u tare=%u thresh=%u auto_th=%u std_mul=%u tare_buf=%u cur_buf=%u"
+    sendf("analog_probe_report oid=%c raw=%u cur=%u tare=%u thresh=%u auto_th=%u std_mul=%u tare_buf=%u cur_buf=%u"
           , args[0], raw, (int)cur*1000, (int)tar*1000, (int)thresh*1000, auto_thresh, (int)std_mul*100, tare_buf, cur_buf);
 }
-DECL_COMMAND(command_report, "analog_probe_query_state oid=%c");
+DECL_COMMAND(command_report, "analog_probe_query_report oid=%c");

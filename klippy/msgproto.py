@@ -330,7 +330,6 @@ class MessageParser:
         try:
             argparts = dict(arg.split('=', 1) for arg in parts[1:])
             for name, value in argparts.items():
-                logging.info("CGPK msg teared %s -> %s:%s", msgname, name, value)
                 t = mp.name_to_type[name]
                 if t.is_dynamic_string:
                     tval = self._parse_buffer(value)

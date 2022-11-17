@@ -48,7 +48,7 @@ struct analog_probe {
     struct timer time;
     uint32_t rest_time, sample_time, nextwake;
     struct trsync *ts;
-    uint8_t target, state, sample_count, trigger_count, trigger_reason;
+    uint8_t target, sample_count, trigger_count, trigger_reason;
 };
 
 void
@@ -87,44 +87,73 @@ is_triggered(struct analog_probe *pr){
     return inf_trig || sup_trig;
 }
 
-void 
-update_adc_sensor(struct analog_probe *pr)
-{
-    uint32_t sample_delay = gpio_adc_sample(pr->pin);
-    if (sample_delay) {
-        pr->time.waketime += sample_delay;
-        return;
-    }
-    uint16_t value = gpio_adc_read(pr->pin);
-    uint8_t state = pr->state;
-    if (state >= pr->sample_count) {
-        state = 0;
-    } else {
-        value += pr->raw_value;
-    }
-    pr->raw_value = value;
-    pr->state = state+1;
-    if (pr->state < pr->sample_count) {
-        pr->time.waketime += pr->sample_time;
-        return;
-    }
-    pr->nextwake += pr->rest_time;
-    pr->time.waketime = pr->nextwake;
-    return;
-}
-
 // Timer callback for the analog probe
 static uint_fast8_t
 analog_probe_event(struct timer *t)
 {
     struct analog_probe *probe = container_of(t, struct analog_probe, time);
-    // update_adc_sensor(probe);
+    
+    uint32_t sample_delay = gpio_adc_sample(probe->pin);
+    if (sample_delay) {
+        if (sample_delay > probe->rest_time) {
+            probe->time.waketime += sample_delay;
+        } else {
+            probe->time.waketime += probe->rest_time;
+        }
+        return SF_RESCHEDULE;
+    }
+
+    probe->raw_value = gpio_adc_read(a->pin);
     update_buffer(probe);
-    probe->time.waketime += probe->rest_time;
-    // if (is_triggered(probe) && probe->target) {
-    //     trsync_do_trigger(probe->ts, probe->trigger_reason);
-    //     return SF_DONE;
-    // }
+    if (!(is_triggered(probe) && probe->target)) {
+        // No match - reschedule for the next attempt
+        probe->time.waketime += probe->rest_time;
+        return SF_RESCHEDULE;
+    }
+
+    probe->nextwake = probe->time.waketime + probe->rest_time;
+    probe->time.func = analog_probe_oversample_event;
+    return analog_probe_oversample_event(t);
+}
+
+// Timer callback for an analog probe that is sampling extra times
+static uint_fast8_t
+analog_probe_oversample_event(struct timer *t)
+{
+    struct analog_probe *probe = container_of(t, struct analog_probe, time);
+
+    uint32_t sample_delay = gpio_adc_sample(probe->pin);
+    if (sample_delay) {
+        if (sample_delay > probe->rest_time) {
+            probe->time.func = analog_probe_event;
+            probe->time.waketime = probe->nextwake;
+            probe->trigger_count = probe->sample_count;
+        }
+        if (sample_delay < probe->sample_time) {
+            probe->time.waketime += probe->sample_time;
+        } else {
+            probe->time.waketime += sample_delay;
+        }
+        return SF_RESCHEDULE;
+    }
+
+    probe->raw_value = gpio_adc_read(probe->pin);
+    update_buffer(probe);
+    if (!(is_triggered(probe) && probe->target)) {
+        // No longer matching - reschedule for the next attempt
+        probe->time.func = analog_probe_event;
+        probe->time.waketime = probe->nextwake;
+        probe->trigger_count = probe->sample_count;
+        return SF_RESCHEDULE;
+    }
+
+    probe->trigger_count--;
+    if (!probe->trigger_count) {
+        trsync_do_trigger(probe->ts, probe->trigger_reason);
+        return SF_DONE;
+    }
+
+    probe->time.waketime += probe->sample_time;
     return SF_RESCHEDULE;
 }
 
@@ -169,8 +198,7 @@ command_analog_probe_home(uint32_t *args)
     struct analog_probe *probe = oid_lookup(args[0], command_config_analog_probe);
     sched_del_timer(&probe->time);
     gpio_adc_cancel_sample(probe->pin);
-    probe->nextwake = args[1];
-    probe->time.waketime = probe->nextwake;
+    probe->time.waketime = args[1];
     probe->sample_time = args[2];
     probe->sample_count = args[3];
     if (!probe->sample_count) {
@@ -179,10 +207,10 @@ command_analog_probe_home(uint32_t *args)
         probe->target = 0;
         return;
     }
-    probe->state = probe->sample_count + 1;
+    //probe->state = probe->sample_count + 1;
     probe->rest_time = args[4];
     probe->time.func = analog_probe_event;
-    //e->trigger_count = e->sample_count;
+    probe->trigger_count = probe->sample_count;
     probe->target = args[5];
     probe->ts = trsync_oid_lookup(args[6]);
     probe->trigger_reason = args[7];

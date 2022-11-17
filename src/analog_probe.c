@@ -51,6 +51,8 @@ struct analog_probe {
     uint8_t target, sample_count, trigger_count, trigger_reason;
 };
 
+static uint_fast8_t analog_probe_oversample_event(struct timer *t);
+
 void
 update_buffer(struct analog_probe *pr) {
     if (pr->buffer_index < (pr->buffer_length-1)) {
@@ -103,7 +105,7 @@ analog_probe_event(struct timer *t)
         return SF_RESCHEDULE;
     }
 
-    probe->raw_value = gpio_adc_read(a->pin);
+    probe->raw_value = gpio_adc_read(probe->pin);
     update_buffer(probe);
     if (!(is_triggered(probe) && probe->target)) {
         // No match - reschedule for the next attempt

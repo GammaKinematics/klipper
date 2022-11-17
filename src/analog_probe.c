@@ -120,10 +120,10 @@ analog_probe_event(struct timer *t)
     struct analog_probe *probe = container_of(t, struct analog_probe, time);
     update_adc_sensor(probe);
     update_buffer(probe);
-    if (is_triggered(probe) && probe->target) {
-        trsync_do_trigger(probe->ts, probe->trigger_reason);
-        return SF_DONE;
-    }
+    // if (is_triggered(probe) && probe->target) {
+    //     trsync_do_trigger(probe->ts, probe->trigger_reason);
+    //     return SF_DONE;
+    // }
     return SF_RESCHEDULE;
 }
 

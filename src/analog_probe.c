@@ -118,7 +118,7 @@ static uint_fast8_t
 analog_probe_event(struct timer *t)
 {
     struct analog_probe *probe = container_of(t, struct analog_probe, time);
-    update_adc_sensor(probe);
+    // update_adc_sensor(probe);
     update_buffer(probe);
     // if (is_triggered(probe) && probe->target) {
     //     trsync_do_trigger(probe->ts, probe->trigger_reason);
@@ -155,6 +155,7 @@ command_config_analog_probe(uint32_t *args)
     probe->buffer_index = 0;
     probe->tare = 0.0;
     probe->current_value = 0.0;
+    probe->raw_value = 0;
 }
 DECL_COMMAND(command_config_analog_probe, "config_analog_probe oid=%c pin=%c" 
                                           " trig_sup=%u trig_inf=%u trig_th=%u"

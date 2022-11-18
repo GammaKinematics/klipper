@@ -225,7 +225,7 @@ class AnalogProbe:
         current_buffer_len = params['cur_buf']
         trig = float(params['trig'])
         
-        #logging.info("%f, %f, %f, %f, %f, %f, %f, %f, %f, %f" % (ts, raw, cur, tare, threshold, auto_threshold, auto_std_multiplier, tare_buffer_len, current_buffer_len, trig))
+        logging.info("%f, %f, %f, %f, %f, %f, %f, %f, %f, %f" % (ts, raw, cur, tare, threshold, auto_threshold, auto_std_multiplier, tare_buffer_len, current_buffer_len, trig))
 
 
 def load_config(config):

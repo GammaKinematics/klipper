@@ -107,7 +107,21 @@ analog_probe_event(struct timer *t)
 
     probe->raw_value = gpio_adc_read(probe->pin);
     update_buffer(probe);
-    if (!(is_triggered(probe) && probe->target)) {
+    if ((probe->buffer_index = probe->buffer_length) && (probe->tare <= 0)) {
+        probe->tare = 0.0;
+        for (int i = probe->buffer_index-probe->tare_buffer_length+1; i <= probe->buffer_index; i++) {
+            probe->tare += probe->buffer[i];
+        }
+        probe->tare /= probe->tare_buffer_length;
+        if (probe->auto_threshold) {
+            probe->threshold = 0.0;
+            for (int i = probe->buffer_index-probe->tare_buffer_length+1; i <= probe->buffer_index; i++) {
+                probe->threshold += (probe->buffer[i]-probe->tare)*(probe->buffer[i]-probe->tare);
+            }
+            probe->threshold = (probe->std_multiplier*sqroot(probe->threshold/probe->tare_buffer_length))/probe->tare;
+        }
+    }
+    if ((probe->tare <= 0) || !(is_triggered(probe) && probe->target)) {
         // No match - reschedule for the next attempt
         probe->time.waketime += probe->rest_time;
         return SF_RESCHEDULE;
@@ -141,20 +155,6 @@ analog_probe_oversample_event(struct timer *t)
 
     probe->raw_value = gpio_adc_read(probe->pin);
     update_buffer(probe);
-    if ((probe->buffer_index = probe->buffer_length) && (probe->tare <= 0)) {
-        probe->tare = 0.0;
-        for (int i = probe->buffer_index-probe->tare_buffer_length+1; i <= probe->buffer_index; i++) {
-            probe->tare += probe->buffer[i];
-        }
-        probe->tare /= probe->tare_buffer_length;
-        if (probe->auto_threshold) {
-            probe->threshold = 0.0;
-            for (int i = probe->buffer_index-probe->tare_buffer_length+1; i <= probe->buffer_index; i++) {
-                probe->threshold += (probe->buffer[i]-probe->tare)*(probe->buffer[i]-probe->tare);
-            }
-            probe->threshold = (probe->std_multiplier*sqroot(probe->threshold/probe->tare_buffer_length))/probe->tare;
-        }
-    }
     if (!(is_triggered(probe) && probe->target)) {
         // No longer matching - reschedule for the next attempt
         probe->time.func = analog_probe_event;

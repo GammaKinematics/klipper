@@ -141,6 +141,20 @@ analog_probe_oversample_event(struct timer *t)
 
     probe->raw_value = gpio_adc_read(probe->pin);
     update_buffer(probe);
+    if ((probe->buffer_index = probe->buffer_length) && (probe->tare <= 0)) {
+        probe->tare = 0.0;
+        for (int i = probe->buffer_index-probe->tare_buffer_length+1; i <= probe->buffer_index; i++) {
+            probe->tare += probe->buffer[i];
+        }
+        probe->tare /= probe->tare_buffer_length;
+        if (probe->auto_threshold) {
+            probe->threshold = 0.0;
+            for (int i = probe->buffer_index-probe->tare_buffer_length+1; i <= probe->buffer_index; i++) {
+                probe->threshold += (probe->buffer[i]-probe->tare)*(probe->buffer[i]-probe->tare);
+            }
+            probe->threshold = (probe->std_multiplier*sqroot(probe->threshold/probe->tare_buffer_length))/probe->tare;
+        }
+    }
     if (!(is_triggered(probe) && probe->target)) {
         // No longer matching - reschedule for the next attempt
         probe->time.func = analog_probe_event;
@@ -195,6 +209,35 @@ DECL_COMMAND(command_config_analog_probe, "config_analog_probe oid=%c pin=%c"
                                           " tare_buf_len=%u cur_buf_len=%u");
 
 void
+command_analog_probe_init(uint32_t *args)
+{
+    struct analog_probe *probe = oid_lookup(args[0], command_config_analog_probe);
+    sched_del_timer(&probe->time);
+    gpio_adc_cancel_sample(probe->pin);
+    probe->time.waketime = args[1];
+    probe->sample_time = args[2];
+    probe->sample_count = args[3];
+    if (!probe->sample_count) {
+        // Disable end stop checking
+        probe->ts = NULL;
+        probe->target = 0;
+        return;
+    } else {
+        probe->sample_count = 1;
+    }
+    //probe->state = probe->sample_count + 1;
+    probe->rest_time = args[4];
+    probe->time.func = analog_probe_event;
+    probe->trigger_count = probe->sample_count;
+    probe->target = args[5];
+    probe->ts = trsync_oid_lookup(args[6]);
+    probe->trigger_reason = args[7];
+    sched_add_timer(&probe->time);
+}
+DECL_COMMAND(command_analog_probe_init,
+             "analog_probe_init oid=%c clock=%u rest_ticks=%u pin_value=%c");
+
+void
 command_analog_probe_home(uint32_t *args)
 {
     struct analog_probe *probe = oid_lookup(args[0], command_config_analog_probe);
@@ -208,6 +251,8 @@ command_analog_probe_home(uint32_t *args)
         probe->ts = NULL;
         probe->target = 0;
         return;
+    } else {
+        probe->sample_count = 1;
     }
     //probe->state = probe->sample_count + 1;
     probe->rest_time = args[4];
@@ -217,6 +262,8 @@ command_analog_probe_home(uint32_t *args)
     probe->ts = trsync_oid_lookup(args[6]);
     probe->trigger_reason = args[7];
     sched_add_timer(&probe->time);
+    probe->tare = 0.0;
+    probe->buffer_index = 0;
 }
 DECL_COMMAND(command_analog_probe_home,
              "analog_probe_home oid=%c clock=%u sample_ticks=%u sample_count=%c"
@@ -238,6 +285,8 @@ command_analog_probe_query_state(uint32_t *args)
           , oid, targ, nextwake, trig);
 }
 DECL_COMMAND(command_analog_probe_query_state, "analog_probe_query_state oid=%c");
+
+
 
 void 
 command_update_buffer(uint32_t *args) {

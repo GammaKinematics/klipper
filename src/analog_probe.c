@@ -320,7 +320,6 @@ command_analog_probe_query_state(uint32_t *args)
 DECL_COMMAND(command_analog_probe_query_state, "analog_probe_query_state oid=%c");
 
 
-
 void 
 command_update_buffer(uint32_t *args) {
     struct analog_probe *probe = oid_lookup(args[0], command_config_analog_probe);

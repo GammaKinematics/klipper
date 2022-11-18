@@ -208,9 +208,9 @@ class AnalogProbe:
     def cmd_LOGGING_PROBE(self, gcmd):
         rest_time = gcmd.get_float("TS", 0.000015)
         print_time = self.printer.lookup_object('toolhead').get_last_move_time()
-        clock = self._mcu.print_time_to_clock(print_time)
-        rest_ticks = self._mcu.print_time_to_clock(print_time+rest_time) - clock
-        
+        clock = self.mcu_endstop._mcu.print_time_to_clock(print_time)
+        rest_ticks = self.mcu_endstop._mcu.print_time_to_clock(print_time+rest_time) - clock
+
         self.mcu_endstop._logging_cmd.send([self.mcu_endstop._oid, clock, rest_ticks, 1])
 
     def _handle_logging(self, params):

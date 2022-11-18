@@ -206,7 +206,7 @@ class AnalogProbe:
                                                                                 self.current_buffer_len))
 
     def cmd_LOGGING_PROBE(self, gcmd):
-        rest_time = gcmd.get_int("TS", 0.000015)
+        rest_time = gcmd.get_float("TS", 0.000015)
         print_time = self.printer.lookup_object('toolhead').get_last_move_time()
         clock = self._mcu.print_time_to_clock(print_time)
         rest_ticks = self._mcu.print_time_to_clock(print_time+rest_time) - clock
@@ -225,7 +225,7 @@ class AnalogProbe:
         current_buffer_len = params['cur_buf']
         trig = float(params['trig'])
         
-        logging.info("%f, %f, %f, %f, %f, %f, %f, %f, %f, %f" % (ts, raw, cur, tare, threshold, auto_threshold, auto_std_multiplier, tare_buffer_len, current_buffer_len, trig))
+        #logging.info("%f, %f, %f, %f, %f, %f, %f, %f, %f, %f" % (ts, raw, cur, tare, threshold, auto_threshold, auto_std_multiplier, tare_buffer_len, current_buffer_len, trig))
 
 
 def load_config(config):

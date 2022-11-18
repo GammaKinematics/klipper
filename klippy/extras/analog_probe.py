@@ -71,6 +71,10 @@ class AnalogProbe:
                                     self.cmd_QUERY_STATE,
                                     desc=self.cmd_MAKE_TARE_help)
 
+        self.gcode.register_command('LOGGING_PROBE',
+                                    self.cmd_LOGGING_PROBE,
+                                    desc=self.cmd_LOGGING_PROBE_help)
+
         # multi probes state
         self.multi = 'OFF'
 
@@ -79,6 +83,7 @@ class AnalogProbe:
     cmd_UPDATE_BUFFER_LEN_help = "Update the lenght of the buffers."
     cmd_MAKE_TARE_help = "Tare the probe."
     cmd_UPDATE_THRESHOLD_help = "Update the threshold of the probe."
+    cmd_LOGGING_PROBE_help = "Start logging the probe values."
 
     def handle_mcu_identify(self):
         logging.info("CPGK handle_mcu checkpoint")
@@ -117,6 +122,9 @@ class AnalogProbe:
         self.mcu_endstop._report_cmd = self.mcu_endstop._mcu.lookup_query_command("analog_probe_query_report oid=%c", 
                                                                                   "analog_probe_report oid=%c raw=%u cur=%u tare=%u thresh=%u auto_th=%u std_mul=%u tare_buf=%u cur_buf=%u",
                                                                                   oid=self.mcu_endstop._oid, cq=cmd_queue)
+        self.mcu_endstop._logging_cmd = self.mcu_endstop._mcu.lookup_command("analog_probe_init oid=%c clock=%u rest_ticks=%u pin_value=%c", cq=cmd_queue)
+        self.mcu_endstop._mcu.register_response(self._handle_logging,
+                                                "analog_probe_log", self.mcu_endstop._oid)
         logging.info("CPGK build_config checkpoint")
 
     def home_start(self, print_time, sample_time, sample_count, rest_time, triggered=True):
@@ -196,6 +204,28 @@ class AnalogProbe:
                                                                                 self.auto_std_multiplier,
                                                                                 self.tare_buffer_len,
                                                                                 self.current_buffer_len))
+
+    def cmd_LOGGING_PROBE(self, gcmd):
+        rest_time = gcmd.get_int("TS", 0.000015)
+        print_time = self.printer.lookup_object('toolhead').get_last_move_time()
+        clock = self._mcu.print_time_to_clock(print_time)
+        rest_ticks = self._mcu.print_time_to_clock(print_time+rest_time) - clock
+        
+        self.mcu_endstop._logging_cmd.send([self.mcu_endstop._oid, clock, rest_ticks, 1])
+
+    def _handle_logging(self, params):
+        ts = float(params['ts'])
+        raw = float(params['raw'])
+        cur = float(params['cur'])/1000
+        tare = float(params['tare'])/1000
+        threshold = float(params['thresh'])/1000
+        auto_threshold = bool(params['auto_th'])
+        auto_std_multiplier = float(params['std_mul'])/100
+        tare_buffer_len = params['tare_buf']
+        current_buffer_len = params['cur_buf']
+        trig = float(params['trig'])
+        
+        logging.info("%f, %f, %f, %f, %f, %f, %f, %f, %f, %f" % (ts, raw, cur, tare, threshold, auto_threshold, auto_std_multiplier, tare_buffer_len, current_buffer_len, trig))
 
 
 def load_config(config):

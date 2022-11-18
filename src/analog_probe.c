@@ -173,6 +173,43 @@ analog_probe_oversample_event(struct timer *t)
     return SF_RESCHEDULE;
 }
 
+static uint_fast8_t
+analog_probe_logging(struct timer *t)
+{
+    struct analog_probe *probe = container_of(t, struct analog_probe, time);
+    
+    uint32_t sample_delay = gpio_adc_sample(probe->pin);
+    if (sample_delay) {
+        if (sample_delay > probe->rest_time) {
+            probe->time.waketime += sample_delay;
+        } else {
+            probe->time.waketime += probe->rest_time;
+        }
+        return SF_RESCHEDULE;
+    }
+
+    probe->raw_value = gpio_adc_read(probe->pin);
+    update_buffer(probe);
+
+    irq_disable();
+    uint32_t timestamp = probe->time.waketime;
+    uint16_t raw = probe->raw_value;
+    double cur = probe->current_value;
+    double tar = probe->tare;
+    double thresh = probe->threshold;
+    uint8_t auto_thresh = probe->auto_threshold;
+    double std_mul = probe->std_multiplier;
+    uint8_t tare_buf = probe->tare_buffer_length;
+    uint8_t cur_buf = probe->current_buffer_length;
+    uint8_t trig = is_triggered(probe);
+    irq_enable();
+    sendf("analog_probe_log ts=%u raw=%u cur=%u tare=%u thresh=%u auto_th=%u std_mul=%u tare_buf=%u cur_buf=%u trig=%u"
+          , timestamp, raw, (int)cur*1000, (int)tar*1000, (int)thresh*1000, auto_thresh, (int)std_mul*100, tare_buf, cur_buf, trig);
+
+    probe->time.waketime += probe->rest_time;
+    return SF_RESCHEDULE;
+}
+
 void
 command_config_analog_probe(uint32_t *args)
 {
@@ -215,23 +252,9 @@ command_analog_probe_init(uint32_t *args)
     sched_del_timer(&probe->time);
     gpio_adc_cancel_sample(probe->pin);
     probe->time.waketime = args[1];
-    probe->sample_time = args[2];
-    probe->sample_count = args[3];
-    if (!probe->sample_count) {
-        // Disable end stop checking
-        probe->ts = NULL;
-        probe->target = 0;
-        return;
-    } else {
-        probe->sample_count = 1;
-    }
-    //probe->state = probe->sample_count + 1;
-    probe->rest_time = args[4];
-    probe->time.func = analog_probe_event;
-    probe->trigger_count = probe->sample_count;
-    probe->target = args[5];
-    probe->ts = trsync_oid_lookup(args[6]);
-    probe->trigger_reason = args[7];
+    probe->rest_time = args[2];
+    probe->target = args[3];
+    probe->time.func = analog_probe_logging;
     sched_add_timer(&probe->time);
 }
 DECL_COMMAND(command_analog_probe_init,

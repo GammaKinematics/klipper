@@ -319,7 +319,6 @@ class MessageParser:
                         msgformat, mp.msgformat)
         return mp
     def create_command(self, msg):
-        logging.info("CGPK msg -> %s", msg)
         parts = msg.strip().split()
         if not parts:
             return ""

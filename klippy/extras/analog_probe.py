@@ -1,5 +1,5 @@
 # Analog probe support
-import logging
+import logging, multiprocessing, os
 from . import probe
 
 
@@ -71,9 +71,13 @@ class AnalogProbe:
                                     self.cmd_QUERY_STATE,
                                     desc=self.cmd_MAKE_TARE_help)
 
-        self.gcode.register_command('LOGGING_PROBE',
-                                    self.cmd_LOGGING_PROBE,
-                                    desc=self.cmd_LOGGING_PROBE_help)
+        self.gcode.register_command('START_LOGGING',
+                                    self.cmd_START_LOGGING,
+                                    desc=self.cmd_START_LOGGING_help)
+        
+        self.gcode.register_command('STOP_LOGGING',
+                                    self.cmd_STOP_LOGGING,
+                                    desc=self.cmd_STOP_LOGGING_help)
 
         # multi probes state
         self.multi = 'OFF'
@@ -83,7 +87,8 @@ class AnalogProbe:
     cmd_UPDATE_BUFFER_LEN_help = "Update the lenght of the buffers."
     cmd_MAKE_TARE_help = "Tare the probe."
     cmd_UPDATE_THRESHOLD_help = "Update the threshold of the probe."
-    cmd_LOGGING_PROBE_help = "Start logging the probe values."
+    cmd_START_LOGGING_help = "Start logging the probe values."
+    cmd_STOP_LOGGING_help = "Stop logging the probe values."
 
     def handle_mcu_identify(self):
         logging.info("CPGK handle_mcu checkpoint")
@@ -122,9 +127,9 @@ class AnalogProbe:
         self.mcu_endstop._report_cmd = self.mcu_endstop._mcu.lookup_query_command("analog_probe_query_report oid=%c", 
                                                                                   "analog_probe_report oid=%c raw=%u cur=%u tare=%u thresh=%u auto_th=%u std_mul=%u tare_buf=%u cur_buf=%u",
                                                                                   oid=self.mcu_endstop._oid, cq=cmd_queue)
-        self.mcu_endstop._logging_cmd = self.mcu_endstop._mcu.lookup_command("analog_probe_init oid=%c clock=%u rest_ticks=%u pin_value=%c", cq=cmd_queue)
-        self.mcu_endstop._mcu.register_response(self._handle_logging,
-                                                "analog_probe_log", self.mcu_endstop._oid)
+        self.mcu_endstop._start_logging_cmd = self.mcu_endstop._mcu.lookup_command("analog_probe_init oid=%c clock=%u rest_ticks=%u pin_value=%c", cq=cmd_queue)
+        self.mcu_endstop._stop_logging_cmd = self.mcu_endstop._mcu.lookup_command("analog_probe_stop oid=%c", cq=cmd_queue)
+        self.mcu_endstop._mcu.register_response(self._handle_logging, "analog_probe_log", self.mcu_endstop._oid)
         logging.info("CPGK build_config checkpoint")
 
     def home_start(self, print_time, sample_time, sample_count, rest_time, triggered=True):
@@ -205,28 +210,59 @@ class AnalogProbe:
                                                                                 self.tare_buffer_len,
                                                                                 self.current_buffer_len))
 
-    def cmd_LOGGING_PROBE(self, gcmd):
+    def cmd_START_LOGGING(self, gcmd):
         rest_time = gcmd.get_float("TS", 0.000015)
         print_time = self.printer.lookup_object('toolhead').get_last_move_time()
         clock = self.mcu_endstop._mcu.print_time_to_clock(print_time)
         rest_ticks = self.mcu_endstop._mcu.print_time_to_clock(print_time+rest_time) - clock
 
-        self.mcu_endstop._logging_cmd.send([self.mcu_endstop._oid, clock, rest_ticks, 1])
+        self.reset_logs()
+
+        self.mcu_endstop._start_logging_cmd.send([self.mcu_endstop._oid, clock, rest_ticks, 1])
+
+    def cmd_STOP_LOGGING(self, gcmd):
+        self.mcu_endstop._stop_logging_cmd.send([self.mcu_endstop._oid])
+        def write_impl():
+            try:
+                # Try to re-nice writing process
+                os.nice(20)
+            except:
+                pass
+            f = open("/tmp/analog_probe_logs.csv", "w")
+            f.write("timestamp,raw,cur,tare,thresh,trig,auto_th,std_mul,tare_buf,cur_buf\n")
+            samples = self.samples or self.get_samples()
+            for i in range(len(self._ts)):
+                f.write("%f,%f,%f,%f,%f,%f,%f,%f,%f,%f\n" % (self._ts[i], self._raws[i], self._curs[i], self._tares[i], self._thresholds[i],
+                                                             self._auto_thresholds[i], self._auto_std_multipliers[i], self._tare_buffer_lens[i], self._current_buffer_lens[i], self._trigs[i]))
+            f.close()
+        write_proc = multiprocessing.Process(target=write_impl)
+        write_proc.daemon = True
+        write_proc.start()
 
     def _handle_logging(self, params):
-        ts = float(params['ts'])
-        raw = float(params['raw'])
-        cur = float(params['cur'])/1000
-        tare = float(params['tare'])/1000
-        threshold = float(params['thresh'])/1000
-        auto_threshold = bool(params['auto_th'])
-        auto_std_multiplier = float(params['std_mul'])/100
-        tare_buffer_len = params['tare_buf']
-        current_buffer_len = params['cur_buf']
-        trig = float(params['trig'])
-        
-        logging.info("%f, %f, %f, %f, %f, %f, %f, %f, %f, %f" % (ts, raw, cur, tare, threshold, auto_threshold, auto_std_multiplier, tare_buffer_len, current_buffer_len, trig))
+        logging.info("CPGK callback received")
+        self._ts.append(float(params['ts']))
+        self._raws.append(float(params['raw']))
+        self._curs.append(float(params['cur'])/1000)
+        self._tares.append(float(params['tare'])/1000)
+        self._thresholds.append(float(params['thresh'])/1000)
+        self._auto_thresholds.append(bool(params['auto_th']))
+        self._auto_std_multipliers.append(float(params['std_mul'])/100)
+        self._tare_buffer_lens.append(params['tare_buf'])
+        self._current_buffer_lens.append(params['cur_buf'])
+        self._trigs.append(float(params['trig']))
 
+    def reset_logs(self):
+        self._ts = []
+        self._raws = []
+        self._curs = []
+        self._tares = []
+        self._thresholds = []
+        self._auto_thresholds = []
+        self._auto_std_multipliers = []
+        self._tare_buffer_lens = []
+        self._current_buffer_lens = []
+        self._trigs = []
 
 def load_config(config):
     analog_probe = AnalogProbe(config)

@@ -82,6 +82,7 @@ class AnalogProbe:
         # multi probes state
         self.multi = 'OFF'
 
+        self.reset_logs()
         logging.info("CPGK Constructor done")
 
     cmd_UPDATE_BUFFER_LEN_help = "Update the lenght of the buffers."
@@ -133,7 +134,7 @@ class AnalogProbe:
         logging.info("CPGK build_config checkpoint")
 
     def home_start(self, print_time, sample_time, sample_count, rest_time, triggered=True):
-      self.mcu_endstop._do_tare_cmd.send([self.mcu_endstop._oid])
+      #self.mcu_endstop._do_tare_cmd.send([self.mcu_endstop._oid])
       return self.mcu_endstop.home_start(print_time, sample_time, sample_count, rest_time, triggered)
 
     def raise_probe(self): #modifs
@@ -222,22 +223,21 @@ class AnalogProbe:
 
     def cmd_STOP_LOGGING(self, gcmd):
         self.mcu_endstop._stop_logging_cmd.send([self.mcu_endstop._oid])
-        def write_impl():
-            try:
-                # Try to re-nice writing process
-                os.nice(20)
-            except:
-                pass
-            f = open("/tmp/analog_probe_logs.csv", "w")
-            f.write("timestamp,raw,cur,tare,thresh,trig,auto_th,std_mul,tare_buf,cur_buf\n")
-            samples = self.samples or self.get_samples()
-            for i in range(len(self._ts)):
-                f.write("%f,%f,%f,%f,%f,%f,%f,%f,%f,%f\n" % (self._ts[i], self._raws[i], self._curs[i], self._tares[i], self._thresholds[i],
-                                                             self._auto_thresholds[i], self._auto_std_multipliers[i], self._tare_buffer_lens[i], self._current_buffer_lens[i], self._trigs[i]))
-            f.close()
-        write_proc = multiprocessing.Process(target=write_impl)
-        write_proc.daemon = True
-        write_proc.start()
+        # def write_impl():
+        #     try:
+        #         # Try to re-nice writing process
+        #         os.nice(20)
+        #     except:
+        #         pass
+        #     f = open("/tmp/analog_probe_logs.csv", "w")
+        #     f.write("timestamp,raw,cur,tare,thresh,trig,auto_th,std_mul,tare_buf,cur_buf\n")
+        #     for i in range(len(self._ts)):
+        #         f.write("%f,%f,%f,%f,%f,%f,%f,%f,%f,%f\n" % (self._ts[i], self._raws[i], self._curs[i], self._tares[i], self._thresholds[i],
+        #                                                      self._auto_thresholds[i], self._auto_std_multipliers[i], self._tare_buffer_lens[i], self._current_buffer_lens[i], self._trigs[i]))
+        #     f.close()
+        # write_proc = multiprocessing.Process(target=write_impl)
+        # write_proc.daemon = True
+        # write_proc.start()
 
     def _handle_logging(self, params):
         logging.info("CPGK callback received")

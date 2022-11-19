@@ -193,16 +193,17 @@ class AnalogProbe:
     def cmd_START_LOGGING(self, gcmd):
         rest_time = gcmd.get_float("TIMESTEP", 0.000015)
         log_time = gcmd.get_float("DURATION", 10.0)
+        self._logfile_name = gcmd.get("FILENAME", "analog_probe_logs")
+        self._gcmd = gcmd
         print_time = self.printer.lookup_object('toolhead').get_last_move_time()
         clock = self.mcu_endstop._mcu.print_time_to_clock(print_time)
         rest_ticks = self.mcu_endstop._mcu.print_time_to_clock(print_time+rest_time) - clock
         log_ticks = self.mcu_endstop._mcu.print_time_to_clock(print_time+log_time)
         self.reset_logs()
-        logging.info('CPGK start logging')
-        logging.info(rest_time, log_time, clock, rest_ticks, log_ticks)
         self.mcu_endstop._start_logging_cmd.send([self.mcu_endstop._oid, clock, rest_ticks, log_ticks])
 
     def _handle_logging(self, params):
+        logging.info("CPGK new callback")
         self._ts.append(float(params['ts']))
         self._raws.append(float(params['raw']))
         self._curs.append(float(params['cur'])/1000)
@@ -214,11 +215,10 @@ class AnalogProbe:
         self._current_buffer_lens.append(params['cur_buf'])
         self._trigs.append(float(params['trig']))
         if bool(params['finished']):
-            #gcmd.respond_info("Record finished")
+            self._gcmd.respond_info("Record finished")
             self.save_logs()
 
     def reset_logs(self):
-        logging.info("CPGK new callback")
         self._ts = []
         self._raws = []
         self._curs = []
@@ -236,7 +236,7 @@ class AnalogProbe:
                 os.nice(20)
             except:
                 pass
-            f = open("/tmp/analog_probe_logs.csv", "w")
+            f = open("/tmp/"+self._logfile_name+".csv", "w")
             f.write("timestamp,raw,cur,tare,thresh,trig,auto_th,std_mul,tare_buf,cur_buf\n")
             for i in range(len(self._ts)):
                 f.write("%f,%f,%f,%f,%f,%f,%f,%f,%f,%f\n" % (self._ts[i], self._raws[i], self._curs[i], self._tares[i], self._thresholds[i],

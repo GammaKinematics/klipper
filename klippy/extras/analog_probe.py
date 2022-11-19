@@ -5,7 +5,6 @@ from . import probe
 
 class AnalogProbe:
     def __init__(self, config):
-        logging.info("CPGK Constructor started")
         self.printer = config.get_printer()
         # self.printer.register_event_handler("klippy:connect",
         #                                     self.handle_connect)
@@ -30,14 +29,6 @@ class AnalogProbe:
 
         self.tare_buffer_len = config.getint('tare_buffer_len', 100)
         self.current_buffer_len = config.getint('current_buffer_len', 5)
-
-        logging.info("CPGK trig sup: %s", str(int(self.trigger_sup)))
-        logging.info("CPGK trig inf: %s", str(int(self.trigger_inf)))
-        logging.info("CPGK thresh: %s", str(self.threshold))
-        logging.info("CPGK auto thresh: %s", str(int(self.auto_threshold)))
-        logging.info("CPGK std mul: %s", str(self.auto_std_multiplier))
-        logging.info("CPGK tare buf: %s", str(self.tare_buffer_len))
-        logging.info("CPGK cur buf: %s", str(self.current_buffer_len))
 
         # Create an "endstop" object to handle the sensor pin
         ppins = self.printer.lookup_object('pins')
@@ -83,7 +74,6 @@ class AnalogProbe:
         self.multi = 'OFF'
 
         self.reset_logs()
-        logging.info("CPGK Constructor done")
 
     cmd_UPDATE_BUFFER_LEN_help = "Update the lenght of the buffers."
     cmd_MAKE_TARE_help = "Tare the probe."
@@ -92,7 +82,6 @@ class AnalogProbe:
     cmd_STOP_LOGGING_help = "Stop logging the probe values."
 
     def handle_mcu_identify(self):
-        logging.info("CPGK handle_mcu checkpoint")
         kin = self.printer.lookup_object('toolhead').get_kinematics()
         for stepper in kin.get_steppers():
             if stepper.is_active_axis('z'):
@@ -216,9 +205,7 @@ class AnalogProbe:
         print_time = self.printer.lookup_object('toolhead').get_last_move_time()
         clock = self.mcu_endstop._mcu.print_time_to_clock(print_time)
         rest_ticks = self.mcu_endstop._mcu.print_time_to_clock(print_time+rest_time) - clock
-
         self.reset_logs()
-
         self.mcu_endstop._start_logging_cmd.send([self.mcu_endstop._oid, clock, rest_ticks, 1])
 
     def cmd_STOP_LOGGING(self, gcmd):
@@ -240,7 +227,6 @@ class AnalogProbe:
         write_proc.start()
 
     def _handle_logging(self, params):
-        logging.info("CPGK callback received")
         self._ts.append(float(params['ts']))
         self._raws.append(float(params['raw']))
         self._curs.append(float(params['cur'])/1000)

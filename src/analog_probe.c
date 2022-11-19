@@ -267,9 +267,10 @@ DECL_COMMAND(command_analog_probe_init,
 void
 command_analog_probe_stop(uint32_t *args)
 {
-    struct analog_probe *probe = oid_lookup(args[0], command_config_analog_probe);
-    sched_del_timer(&probe->time);
-    gpio_adc_cancel_sample(probe->pin);
+    return;
+    // struct analog_probe *probe = oid_lookup(args[0], command_config_analog_probe);
+    // sched_del_timer(&probe->time);
+    // gpio_adc_cancel_sample(probe->pin);
 }
 DECL_COMMAND(command_analog_probe_stop,
              "analog_probe_stop oid=%c");

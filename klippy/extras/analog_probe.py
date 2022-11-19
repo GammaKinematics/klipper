@@ -129,7 +129,7 @@ class AnalogProbe:
                                                                                   "analog_probe_report oid=%c raw=%u cur=%u tare=%u thresh=%u auto_th=%u std_mul=%u tare_buf=%u cur_buf=%u",
                                                                                   oid=self.mcu_endstop._oid, cq=cmd_queue)
         self.mcu_endstop._start_logging_cmd = self.mcu_endstop._mcu.lookup_command("analog_probe_init oid=%c clock=%u rest_ticks=%u pin_value=%c", cq=cmd_queue)
-        #self.mcu_endstop._stop_logging_cmd = self.mcu_endstop._mcu.lookup_command("analog_probe_stop oid=%c", cq=cmd_queue)
+        self.mcu_endstop._stop_logging_cmd = self.mcu_endstop._mcu.lookup_command("analog_probe_stop oid=%c", cq=cmd_queue)
         self.mcu_endstop._mcu.register_response(self._handle_logging, "analog_probe_log", self.mcu_endstop._oid)
         logging.info("CPGK build_config checkpoint")
 
@@ -222,7 +222,7 @@ class AnalogProbe:
         self.mcu_endstop._start_logging_cmd.send([self.mcu_endstop._oid, clock, rest_ticks, 1])
 
     def cmd_STOP_LOGGING(self, gcmd):
-        #self.mcu_endstop._stop_logging_cmd.send([self.mcu_endstop._oid])
+        self.mcu_endstop._stop_logging_cmd.send([self.mcu_endstop._oid])
         def write_impl():
             try:
                 # Try to re-nice writing process

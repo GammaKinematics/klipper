@@ -204,8 +204,8 @@ class AnalogProbe:
 
     def _handle_logging(self, params):
         logging.info("CPGK new callback")
-        self._ts.append(float(params['ts']))
-        self._raws.append(float(params['raw']))
+        self._ts.append(int(params['ts']))
+        self._raws.append(int(params['raw']))
         self._curs.append(float(params['cur'])/1000)
         self._tares.append(float(params['tare'])/1000)
         self._thresholds.append(float(params['thresh'])/1000)
@@ -213,7 +213,7 @@ class AnalogProbe:
         self._auto_std_multipliers.append(float(params['std_mul'])/100)
         self._tare_buffer_lens.append(params['tare_buf'])
         self._current_buffer_lens.append(params['cur_buf'])
-        self._trigs.append(float(params['trig']))
+        self._trigs.append(bool(params['trig']))
         if bool(params['finished']):
             self._gcmd.respond_info("Record finished")
             self.save_logs()
@@ -239,7 +239,7 @@ class AnalogProbe:
             f = open("/tmp/"+self._logfile_name+".csv", "w")
             f.write("timestamp,raw,cur,tare,thresh,trig,auto_th,std_mul,tare_buf,cur_buf\n")
             for i in range(len(self._ts)):
-                f.write("%f,%f,%f,%f,%f,%f,%f,%f,%f,%f\n" % (self._ts[i], self._raws[i], self._curs[i], self._tares[i], self._thresholds[i],
+                f.write("%i,%i,%f,%f,%f,%i,%f,%i,%i,%i\n" % (self._ts[i], self._raws[i], self._curs[i], self._tares[i], self._thresholds[i],
                                                              self._auto_thresholds[i], self._auto_std_multipliers[i], self._tare_buffer_lens[i], self._current_buffer_lens[i], self._trigs[i]))
             f.close()
         write_proc = multiprocessing.Process(target=write_impl)

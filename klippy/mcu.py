@@ -870,7 +870,10 @@ class MCU:
         except self._serial.get_msgparser().error as e:
             return None
     def lookup_command_tag(self, msgformat):
+        logging.info("CPGK lookup commands")
+        logging.info(msgformat)
         all_msgs = self._serial.get_msgparser().get_messages()
+        logging.info({fmt: msgtag for msgtag, msgtype, fmt in all_msgs})
         return {fmt: msgtag for msgtag, msgtype, fmt in all_msgs}[msgformat]
     def get_enumerations(self):
         return self._serial.get_msgparser().get_enumerations()

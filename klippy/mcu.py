@@ -70,15 +70,6 @@ class MCU_trsync:
         state_tag = mcu.lookup_command_tag(
             "trsync_state oid=%c can_trigger=%c trigger_reason=%c clock=%u")
         ffi_main, ffi_lib = chelper.get_ffi()
-        logging.info("CPGK test")
-        logging.info(self._trdispatch)
-        logging.info(mcu._serial.serialqueue)
-        logging.info(self._cmd_queue)
-        logging.info(self._oid)
-        logging.info(set_timeout_tag)
-        logging.info(trigger_tag)
-        logging.info(state_tag)
-        logging.info(ffi_lib.free)
         self._trdispatch_mcu = ffi_main.gc(ffi_lib.trdispatch_mcu_alloc(
             self._trdispatch, mcu._serial.serialqueue, # XXX
             self._cmd_queue, self._oid, set_timeout_tag, trigger_tag,
@@ -870,10 +861,7 @@ class MCU:
         except self._serial.get_msgparser().error as e:
             return None
     def lookup_command_tag(self, msgformat):
-        logging.info("CPGK lookup commands")
-        logging.info(msgformat)
         all_msgs = self._serial.get_msgparser().get_messages()
-        logging.info({fmt: msgtag for msgtag, msgtype, fmt in all_msgs})
         return {fmt: msgtag for msgtag, msgtype, fmt in all_msgs}[msgformat]
     def get_enumerations(self):
         return self._serial.get_msgparser().get_enumerations()

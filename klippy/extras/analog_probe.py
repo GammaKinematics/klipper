@@ -114,8 +114,7 @@ class AnalogProbe:
         self.mcu_endstop._report_cmd = self.mcu_endstop._mcu.lookup_query_command("analog_probe_query_report oid=%c", 
                                                                                   "analog_probe_report oid=%c raw=%u cur=%u tare=%u thresh=%u auto_th=%u std_mul=%u tare_buf=%u cur_buf=%u",
                                                                                   oid=self.mcu_endstop._oid, cq=cmd_queue)
-        self.mcu_endstop._start_logging_cmd = self.mcu_endstop._mcu.lookup_command("analog_probe_init oid=%c clock=%u rest_ticks=%u pin_value=%c", cq=cmd_queue)
-        #self.mcu_endstop._stop_logging_cmd = self.mcu_endstop._mcu.lookup_command("analog_probe_stop oid=%c", cq=cmd_queue)
+        self.mcu_endstop._start_logging_cmd = self.mcu_endstop._mcu.lookup_command("analog_probe_init oid=%c clock=%u rest_ticks=%u log_ticks=%u", cq=cmd_queue)
         self.mcu_endstop._mcu.register_response(self._handle_logging, "analog_probe_log", self.mcu_endstop._oid)
 
     def home_start(self, print_time, sample_time, sample_count, rest_time, triggered=True):
@@ -197,15 +196,42 @@ class AnalogProbe:
                                                                                 self.current_buffer_len))
 
     def cmd_START_LOGGING(self, gcmd):
-        rest_time = gcmd.get_float("TS", 0.000015)
+        rest_time = gcmd.get_float("TIMESTEP", 0.000015)
+        log_time = gcmd.get_float("DURATION", 10.0)
         print_time = self.printer.lookup_object('toolhead').get_last_move_time()
         clock = self.mcu_endstop._mcu.print_time_to_clock(print_time)
         rest_ticks = self.mcu_endstop._mcu.print_time_to_clock(print_time+rest_time) - clock
+        log_ticks = self.mcu_endstop._mcu.print_time_to_clock(print_time+log_time)
         self.reset_logs()
-        self.mcu_endstop._start_logging_cmd.send([self.mcu_endstop._oid, clock, rest_ticks, 1])
+        self.mcu_endstop._start_logging_cmd.send([self.mcu_endstop._oid, clock, rest_ticks, log_ticks])
 
-    def cmd_STOP_LOGGING(self, gcmd):
-        #self.mcu_endstop._stop_logging_cmd.send([self.mcu_endstop._oid])
+    def _handle_logging(self, params):
+        self._ts.append(float(params['ts']))
+        self._raws.append(float(params['raw']))
+        self._curs.append(float(params['cur'])/1000)
+        self._tares.append(float(params['tare'])/1000)
+        self._thresholds.append(float(params['thresh'])/1000)
+        self._auto_thresholds.append(bool(params['auto_th']))
+        self._auto_std_multipliers.append(float(params['std_mul'])/100)
+        self._tare_buffer_lens.append(params['tare_buf'])
+        self._current_buffer_lens.append(params['cur_buf'])
+        self._trigs.append(float(params['trig']))
+        if bool(params['finished']):
+            self.save_logs()
+
+    def reset_logs(self):
+        self._ts = []
+        self._raws = []
+        self._curs = []
+        self._tares = []
+        self._thresholds = []
+        self._auto_thresholds = []
+        self._auto_std_multipliers = []
+        self._tare_buffer_lens = []
+        self._current_buffer_lens = []
+        self._trigs = []
+
+    def save_logs(self):
         def write_impl():
             try:
                 os.nice(20)
@@ -220,30 +246,6 @@ class AnalogProbe:
         write_proc = multiprocessing.Process(target=write_impl)
         write_proc.daemon = True
         write_proc.start()
-
-    def _handle_logging(self, params):
-        self._ts.append(float(params['ts']))
-        self._raws.append(float(params['raw']))
-        self._curs.append(float(params['cur'])/1000)
-        self._tares.append(float(params['tare'])/1000)
-        self._thresholds.append(float(params['thresh'])/1000)
-        self._auto_thresholds.append(bool(params['auto_th']))
-        self._auto_std_multipliers.append(float(params['std_mul'])/100)
-        self._tare_buffer_lens.append(params['tare_buf'])
-        self._current_buffer_lens.append(params['cur_buf'])
-        self._trigs.append(float(params['trig']))
-
-    def reset_logs(self):
-        self._ts = []
-        self._raws = []
-        self._curs = []
-        self._tares = []
-        self._thresholds = []
-        self._auto_thresholds = []
-        self._auto_std_multipliers = []
-        self._tare_buffer_lens = []
-        self._current_buffer_lens = []
-        self._trigs = []
 
 def load_config(config):
     analog_probe = AnalogProbe(config)

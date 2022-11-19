@@ -47,7 +47,7 @@ struct analog_probe {
     double tare;
 
     struct timer time;
-    uint32_t rest_time, sample_time, nextwake;
+    uint32_t rest_time, sample_time, nextwake, log_time;
     struct trsync *ts;
     uint8_t target, sample_count, trigger_count, trigger_reason;
 };
@@ -204,12 +204,19 @@ analog_probe_logging(struct timer *t)
     uint8_t tare_buf = probe->tare_buffer_length;
     uint8_t cur_buf = probe->current_buffer_length;
     uint8_t trig = is_triggered(probe);
+    uint8_t fin = probe->time.waketime > probe->log_time
     irq_enable();
-    sendf("analog_probe_log oid=%c ts=%u raw=%u cur=%u tare=%u thresh=%u auto_th=%u std_mul=%u tare_buf=%u cur_buf=%u trig=%u",
-          oid, timestamp, raw, (int)cur*1000, (int)tar*1000, (int)thresh*1000, auto_thresh, (int)std_mul*100, tare_buf, cur_buf, trig);
+    sendf("analog_probe_log oid=%c ts=%u raw=%u cur=%u tare=%u thresh=%u auto_th=%u std_mul=%u tare_buf=%u cur_buf=%u trig=%u finished=%u",
+        oid, timestamp, raw, (int)cur*1000, (int)tar*1000, (int)thresh*1000, auto_thresh, (int)std_mul*100, tare_buf, cur_buf, trig, fin);
 
-    probe->time.waketime += probe->rest_time;
-    return SF_RESCHEDULE;
+    if (fin) {
+        sched_del_timer(&probe->time);
+        gpio_adc_cancel_sample(probe->pin);
+        return SF_DONE;
+    } else {
+        probe->time.waketime += probe->rest_time;
+        return SF_RESCHEDULE;
+    }
 }
 
 void
@@ -257,21 +264,12 @@ command_analog_probe_init(uint32_t *args)
     gpio_adc_cancel_sample(probe->pin);
     probe->time.waketime = args[1];
     probe->rest_time = args[2];
-    probe->target = args[3];
+    probe->log_time = args[3];
     probe->time.func = analog_probe_logging;
     sched_add_timer(&probe->time);
 }
 DECL_COMMAND(command_analog_probe_init,
-             "analog_probe_init oid=%c clock=%u rest_ticks=%u pin_value=%c");
-
-// void
-// command_analog_probe_stop(uint32_t *args)
-// {
-//     struct analog_probe *probe = oid_lookup(args[0], command_config_analog_probe);
-//     sched_del_timer(&probe->time);
-//     gpio_adc_cancel_sample(probe->pin);
-// }
-// DECL_COMMAND(command_analog_probe_stop, "analog_probe_stop oid=%c");
+             "analog_probe_init oid=%c clock=%u rest_ticks=%u log_ticks=%u");
 
 void
 command_analog_probe_home(uint32_t *args)

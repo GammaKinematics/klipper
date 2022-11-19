@@ -6,8 +6,6 @@ from . import probe
 class AnalogProbe:
     def __init__(self, config):
         self.printer = config.get_printer()
-        # self.printer.register_event_handler("klippy:connect",
-        #                                     self.handle_connect)
         self.printer.register_event_handler('klippy:mcu_identify',
                                             self.handle_mcu_identify)
         self.position_endstop = config.getfloat('z_offset')
@@ -34,10 +32,9 @@ class AnalogProbe:
         ppins = self.printer.lookup_object('pins')
         pin = config.get('pin')
         pin_params = ppins.lookup_pin(pin, can_invert=True, can_pullup=True)
-        mcu = pin_params['chip']
         pin_params['is_adc'] = True
-        self.mcu_endstop = mcu.setup_pin('endstop', pin_params)
-        mcu.register_config_callback(self.config_callbacks) #self.mcu_endstop._
+        self.mcu_endstop = pin_params['chip'].setup_pin('endstop', pin_params)
+        self.mcu_endstop._mcu.register_config_callback(self.config_callbacks)
 
         # Wrappers
         self.get_mcu = self.mcu_endstop.get_mcu
@@ -118,9 +115,8 @@ class AnalogProbe:
                                                                                   "analog_probe_report oid=%c raw=%u cur=%u tare=%u thresh=%u auto_th=%u std_mul=%u tare_buf=%u cur_buf=%u",
                                                                                   oid=self.mcu_endstop._oid, cq=cmd_queue)
         self.mcu_endstop._start_logging_cmd = self.mcu_endstop._mcu.lookup_command("analog_probe_init oid=%c clock=%u rest_ticks=%u pin_value=%c", cq=cmd_queue)
-        #self.mcu_endstop._stop_logging_cmd = self.mcu_endstop._mcu.lookup_command("analog_probe_stop oid=%c", cq=cmd_queue)
+        self.mcu_endstop._stop_logging_cmd = self.mcu_endstop._mcu.lookup_command("analog_probe_stop oid=%c", cq=cmd_queue)
         self.mcu_endstop._mcu.register_response(self._handle_logging, "analog_probe_log", self.mcu_endstop._oid)
-        logging.info("CPGK build_config checkpoint")
 
     def home_start(self, print_time, sample_time, sample_count, rest_time, triggered=True):
       #self.mcu_endstop._do_tare_cmd.send([self.mcu_endstop._oid])
@@ -209,7 +205,7 @@ class AnalogProbe:
         self.mcu_endstop._start_logging_cmd.send([self.mcu_endstop._oid, clock, rest_ticks, 1])
 
     def cmd_STOP_LOGGING(self, gcmd):
-        #self.mcu_endstop._stop_logging_cmd.send([self.mcu_endstop._oid])
+        self.mcu_endstop._stop_logging_cmd.send([self.mcu_endstop._oid])
         def write_impl():
             try:
                 os.nice(20)

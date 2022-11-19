@@ -204,7 +204,7 @@ analog_probe_logging(struct timer *t)
     uint8_t tare_buf = probe->tare_buffer_length;
     uint8_t cur_buf = probe->current_buffer_length;
     uint8_t trig = is_triggered(probe);
-    uint8_t fin = probe->time.waketime > probe->log_time
+    uint8_t fin = probe->time.waketime > probe->log_time;
     irq_enable();
     sendf("analog_probe_log oid=%c ts=%u raw=%u cur=%u tare=%u thresh=%u auto_th=%u std_mul=%u tare_buf=%u cur_buf=%u trig=%u finished=%u",
         oid, timestamp, raw, (int)cur*1000, (int)tar*1000, (int)thresh*1000, auto_thresh, (int)std_mul*100, tare_buf, cur_buf, trig, fin);

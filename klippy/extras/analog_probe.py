@@ -212,7 +212,6 @@ class AnalogProbe:
         self.mcu_endstop._stop_logging_cmd.send([self.mcu_endstop._oid])
         def write_impl():
             try:
-                # Try to re-nice writing process
                 os.nice(20)
             except:
                 pass

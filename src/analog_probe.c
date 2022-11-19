@@ -30,6 +30,7 @@ double sqroot(double square)
 }
 
 struct analog_probe {
+    uint8_t oid;
     struct gpio_adc pin;
 
     uint8_t trigger_sup, trigger_inf;
@@ -192,6 +193,7 @@ analog_probe_logging(struct timer *t)
     update_buffer(probe);
 
     irq_disable();
+    uint8_t oid = probe->oid;
     uint32_t timestamp = probe->time.waketime;
     uint16_t raw = probe->raw_value;
     double cur = probe->current_value;
@@ -203,8 +205,8 @@ analog_probe_logging(struct timer *t)
     uint8_t cur_buf = probe->current_buffer_length;
     uint8_t trig = is_triggered(probe);
     irq_enable();
-    sendf("analog_probe_log ts=%u raw=%u cur=%u tare=%u thresh=%u auto_th=%u std_mul=%u tare_buf=%u cur_buf=%u trig=%u"
-          , timestamp, raw, (int)cur*1000, (int)tar*1000, (int)thresh*1000, auto_thresh, (int)std_mul*100, tare_buf, cur_buf, trig);
+    sendf("analog_probe_log oid=%c ts=%u raw=%u cur=%u tare=%u thresh=%u auto_th=%u std_mul=%u tare_buf=%u cur_buf=%u trig=%u",
+          oid, timestamp, raw, (int)cur*1000, (int)tar*1000, (int)thresh*1000, auto_thresh, (int)std_mul*100, tare_buf, cur_buf, trig);
 
     probe->time.waketime += probe->rest_time;
     return SF_RESCHEDULE;
@@ -215,6 +217,8 @@ command_config_analog_probe(uint32_t *args)
 {
     struct analog_probe *probe = oid_alloc(args[0], command_config_analog_probe, sizeof(*probe));
     
+    probe->oid = args[0];
+
     probe->pin = gpio_adc_setup(args[1]);
     
     probe->trigger_sup = args[2];

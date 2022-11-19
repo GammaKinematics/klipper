@@ -264,16 +264,16 @@ command_analog_probe_init(uint32_t *args)
 DECL_COMMAND(command_analog_probe_init,
              "analog_probe_init oid=%c clock=%u rest_ticks=%u pin_value=%c");
 
-void
-command_analog_probe_stop(uint32_t *args)
-{
-    return;
-    // struct analog_probe *probe = oid_lookup(args[0], command_config_analog_probe);
-    // sched_del_timer(&probe->time);
-    // gpio_adc_cancel_sample(probe->pin);
-}
-DECL_COMMAND(command_analog_probe_stop,
-             "analog_probe_stop oid=%c");
+// void
+// command_analog_probe_stop(uint32_t *args)
+// {
+//     return;
+//     // struct analog_probe *probe = oid_lookup(args[0], command_config_analog_probe);
+//     // sched_del_timer(&probe->time);
+//     // gpio_adc_cancel_sample(probe->pin);
+// }
+// DECL_COMMAND(command_analog_probe_stop,
+//              "analog_probe_stop oid=%c");
 
 void
 command_analog_probe_home(uint32_t *args)

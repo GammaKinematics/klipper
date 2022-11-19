@@ -63,10 +63,6 @@ class AnalogProbe:
                                     self.cmd_START_LOGGING,
                                     desc=self.cmd_START_LOGGING_help)
         
-        self.gcode.register_command('STOP_LOGGING',
-                                    self.cmd_STOP_LOGGING,
-                                    desc=self.cmd_STOP_LOGGING_help)
-
         # multi probes state
         self.multi = 'OFF'
 
@@ -76,7 +72,6 @@ class AnalogProbe:
     cmd_MAKE_TARE_help = "Tare the probe."
     cmd_UPDATE_THRESHOLD_help = "Update the threshold of the probe."
     cmd_START_LOGGING_help = "Start logging the probe values."
-    cmd_STOP_LOGGING_help = "Stop logging the probe values."
 
     def handle_mcu_identify(self):
         kin = self.printer.lookup_object('toolhead').get_kinematics()

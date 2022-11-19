@@ -239,8 +239,8 @@ class AnalogProbe:
             f = open("/tmp/"+self._logfile_name+".csv", "w")
             f.write("timestamp,raw,cur,tare,thresh,trig,auto_th,std_mul,tare_buf,cur_buf\n")
             for i in range(len(self._ts)):
-                f.write("%i,%i,%f,%f,%f,%i,%f,%i,%i,%i\n" % (self._ts[i], self._raws[i], self._curs[i], self._tares[i], self._thresholds[i],
-                                                             self._auto_thresholds[i], self._auto_std_multipliers[i], self._tare_buffer_lens[i], self._current_buffer_lens[i], self._trigs[i]))
+                f.write("%i,%i,%f,%f,%f,%i,%i,%f,%i,%i\n" % (self._ts[i], self._raws[i], self._curs[i], self._tares[i], self._thresholds[i], self._trigs[i],
+                                                             self._auto_thresholds[i], self._auto_std_multipliers[i], self._tare_buffer_lens[i], self._current_buffer_lens[i]))
             f.close()
         write_proc = multiprocessing.Process(target=write_impl)
         write_proc.daemon = True

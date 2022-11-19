@@ -218,6 +218,7 @@ class AnalogProbe:
             self.save_logs()
 
     def reset_logs(self):
+        logging.info("CPGK new callback")
         self._ts = []
         self._raws = []
         self._curs = []

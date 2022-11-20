@@ -193,21 +193,30 @@ analog_probe_logging(struct timer *t)
     update_buffer(probe);
 
     irq_disable();
+    uint8_t fin = 0;
     uint8_t oid = probe->oid;
-    uint32_t timestamp = probe->time.waketime;
-    uint16_t raw = probe->raw_value;
-    double cur = probe->current_value;
-    double tar = probe->tare;
-    double thresh = probe->threshold;
-    uint8_t auto_thresh = probe->auto_threshold;
-    double std_mul = probe->std_multiplier;
-    uint8_t tare_buf = probe->tare_buffer_length;
-    uint8_t cur_buf = probe->current_buffer_length;
-    uint8_t trig = is_triggered(probe);
-    uint8_t fin = probe->time.waketime > probe->log_time;
-    irq_enable();
-    sendf("analog_probe_log oid=%c ts=%u raw=%u cur=%u tare=%u thresh=%u auto_th=%u std_mul=%u tare_buf=%u cur_buf=%u trig=%u finished=%u",
-        oid, timestamp, raw, (int)cur*1000, (int)tar*1000, (int)thresh*1000, auto_thresh, (int)std_mul*100, tare_buf, cur_buf, trig, fin);
+    if (probe->log_time > 0) {
+        uint32_t timestamp = probe->time.waketime;
+        uint16_t raw = probe->raw_value;
+        double cur = probe->current_value;
+        double tar = probe->tare;
+        double thresh = probe->threshold;
+        uint8_t auto_thresh = probe->auto_threshold;
+        double std_mul = probe->std_multiplier;
+        uint8_t tare_buf = probe->tare_buffer_length;
+        uint8_t cur_buf = probe->current_buffer_length;
+        uint8_t trig = is_triggered(probe);
+        fin = probe->time.waketime > probe->log_time;
+        irq_enable();
+        sendf("analog_probe_log oid=%c ts=%u raw=%u cur=%u tare=%u thresh=%u auto_th=%u std_mul=%u tare_buf=%u cur_buf=%u trig=%u finished=%u",
+            oid, timestamp, raw, (int)cur*1000, (int)tar*1000, (int)thresh*1000, auto_thresh, (int)std_mul*100, tare_buf, cur_buf, trig, fin);
+    } else {
+        fin = probe->buffer_index == probe->tare_buffer_length;
+        irq_enable();
+        if (fin) {
+            sendf("analog_probe_full oid=%c", oid);
+        }
+    }
 
     if (fin) {
         sched_del_timer(&probe->time);
@@ -265,6 +274,7 @@ command_analog_probe_init(uint32_t *args)
     probe->time.waketime = args[1];
     probe->rest_time = args[2];
     probe->log_time = args[3];
+    probe->buffer_index = 0;
     probe->time.func = analog_probe_logging;
     sched_add_timer(&probe->time);
 }
@@ -344,6 +354,14 @@ command_do_tare(uint32_t *args) {
         }
         probe->threshold = (probe->std_multiplier*sqroot(probe->threshold/probe->tare_buffer_length))/probe->tare;
     }
+    irq_disable();
+    double tar = probe->tare;
+    double thresh = probe->threshold;
+    uint8_t auto_thresh = probe->auto_threshold;
+    double std_mul = probe->std_multiplier;
+    irq_enable();
+    sendf("analog_probe_tare oid=%c tare=%u thresh=%u auto_th=%u std_mul=%u"
+          , args[0], (int)tar*1000, (int)thresh*1000, auto_thresh, (int)std_mul*100);
 }
 DECL_COMMAND(command_do_tare, "analog_probe_do_tare oid=%c");
 

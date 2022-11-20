@@ -1,5 +1,5 @@
 # Analog probe support
-import logging, multiprocessing, os
+import logging, multiprocessing, os, time
 from . import probe
 
 
@@ -104,17 +104,26 @@ class AnalogProbe:
             "endstop_state oid=%c homing=%c next_clock=%u pin_value=%c",
             oid=self.mcu_endstop._oid, cq=cmd_queue)
         self.mcu_endstop._update_buffer_cmd = self.mcu_endstop._mcu.lookup_command("analog_probe_update_buffer oid=%c tare_buf_len=%u cur_buf_len=%u", cq=cmd_queue)
-        self.mcu_endstop._do_tare_cmd = self.mcu_endstop._mcu.lookup_command("analog_probe_do_tare oid=%c", cq=cmd_queue)
+        self.mcu_endstop._do_tare_cmd = self.mcu_endstop._mcu.lookup_query_command("analog_probe_do_tare oid=%c",
+                                                                                   "analog_probe_tare oid=%c tare=%u thresh=%u auto_th=%u std_mul=%u",
+                                                                                   oid=self.mcu_endstop._oid, cq=cmd_queue)
         self.mcu_endstop._set_threshold_cmd = self.mcu_endstop._mcu.lookup_command("analog_probe_set_thresh oid=%c trig_th=%u auto_th=%u auto_std_mul=%u", cq=cmd_queue)
         self.mcu_endstop._report_cmd = self.mcu_endstop._mcu.lookup_query_command("analog_probe_query_report oid=%c", 
                                                                                   "analog_probe_report oid=%c raw=%u cur=%u tare=%u thresh=%u auto_th=%u std_mul=%u tare_buf=%u cur_buf=%u",
                                                                                   oid=self.mcu_endstop._oid, cq=cmd_queue)
         self.mcu_endstop._start_logging_cmd = self.mcu_endstop._mcu.lookup_command("analog_probe_init oid=%c clock=%u rest_ticks=%u log_ticks=%u", cq=cmd_queue)
+        self.mcu_endstop._mcu.register_response(self._handle_full_buffer, "analog_probe_full", self.mcu_endstop._oid)
         self.mcu_endstop._mcu.register_response(self._handle_logging, "analog_probe_log", self.mcu_endstop._oid)
 
     def home_start(self, print_time, sample_time, sample_count, rest_time, triggered=True):
-      #self.mcu_endstop._do_tare_cmd.send([self.mcu_endstop._oid])
-      return self.mcu_endstop.home_start(print_time, sample_time, sample_count, rest_time, triggered)
+        self._buffer_full = False
+        clock = self.mcu_endstop._mcu.print_time_to_clock(print_time)
+        rest_ticks = self.mcu_endstop._mcu.print_time_to_clock(print_time+rest_time) - clock
+        self.mcu_endstop._start_logging_cmd.send([self.mcu_endstop._oid, clock, rest_ticks, 0])
+        while not self._buffer_full:
+            time.sleep(0.5)
+        self.cmd_MAKE_TARE(self.gcode.create_gcode_command("", "", {}))
+        return self.mcu_endstop.home_start(print_time, sample_time, sample_count, rest_time, triggered)
 
     def raise_probe(self): #modifs
         toolhead = self.printer.lookup_object('toolhead')
@@ -162,7 +171,18 @@ class AnalogProbe:
         self.mcu_endstop._update_buffer_cmd.send([self.mcu_endstop._oid, self.tare_buffer_len, self.current_buffer_len])
 
     def cmd_MAKE_TARE(self, gcmd):
-        self.mcu_endstop._do_tare_cmd.send([self.mcu_endstop._oid])
+        params = self.mcu_endstop._do_tare_cmd.send([self.mcu_endstop._oid])
+        self.tare = float(params['tare'])/1000
+        self.threshold = float(params['thresh'])/1000
+        self.auto_threshold = bool(params['auto_th'])
+        self.auto_std_multiplier = float(params['std_mul'])/100
+        if self.auto_threshold:
+            gcmd.respond_info("Tare done -> Tare=%.3f, Threshold=%.3f (auto - %.2fxSTD)" % (self.tare, 
+                                                                                            self.threshold,
+                                                                                            self.auto_std_multiplier))
+        else:
+            gcmd.respond_info("Tare done -> Tare=%.3f, Threshold=%.3f (manual)" % (self.tare, 
+                                                                                   self.threshold))
 
     def cmd_UPDATE_THRESHOLD(self, gcmd):
         self.auto_threshold = bool(gcmd.get_int("AUTO", True))
@@ -175,6 +195,7 @@ class AnalogProbe:
     def cmd_QUERY_STATE(self, gcmd):
         params = self.mcu_endstop._report_cmd.send([self.mcu_endstop._oid])
         
+        self.tare = float(params['tare'])/1000
         self.threshold = float(params['thresh'])/1000
         self.auto_threshold = bool(params['auto_th'])
         self.auto_std_multiplier = float(params['std_mul'])/100
@@ -183,7 +204,7 @@ class AnalogProbe:
         
         gcmd.respond_info("Raw: %i, Cur: %f, Tare: %f, Thresh: %f" % (params['raw'], 
                                                                       float(params['cur'])/1000,
-                                                                      float(params['tare'])/1000,
+                                                                      self.tare,
                                                                       self.threshold))
         gcmd.respond_info("Auto: %i, Std mul: %f, Tare buf: %i, Cur buf: %i" % (self.auto_threshold*1, 
                                                                                 self.auto_std_multiplier,
@@ -200,12 +221,6 @@ class AnalogProbe:
         rest_ticks = self.mcu_endstop._mcu.print_time_to_clock(print_time+rest_time) - clock
         log_ticks = self.mcu_endstop._mcu.print_time_to_clock(print_time+log_time)
         self.reset_logs()
-        logging.info("CPGK start logging")
-        logging.info(clock)
-        logging.info(rest_time)
-        logging.info(rest_ticks)
-        logging.info(log_time)
-        logging.info(log_ticks)
         self.mcu_endstop._start_logging_cmd.send([self.mcu_endstop._oid, clock, rest_ticks, log_ticks])
 
     def _handle_logging(self, params):
@@ -222,6 +237,9 @@ class AnalogProbe:
         if bool(params['finished']):
             self._gcmd.respond_info("Record finished")
             self.save_logs()
+
+    def _handle_full_buffer(self):
+        self._buffer_full = True
 
     def reset_logs(self):
         self._ts = []

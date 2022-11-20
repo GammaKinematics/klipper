@@ -203,7 +203,7 @@ class AnalogProbe:
         self.mcu_endstop._start_logging_cmd.send([self.mcu_endstop._oid, clock, rest_ticks, log_ticks])
 
     def _handle_logging(self, params):
-        logging.info("CPGK new callback")
+        logging.info(float(params['thresh'])/1000)
         self._ts.append(int(params['ts']))
         self._raws.append(int(params['raw']))
         self._curs.append(float(params['cur'])/1000)

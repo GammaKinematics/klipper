@@ -359,8 +359,8 @@ command_do_tare(uint32_t *args) {
     }
     irq_disable();
     double tar = probe->tare;
-    double thresh = probe->threshold;
-    uint8_t auto_thresh = 69;//probe->auto_threshold;
+    double thresh = 69;//probe->threshold;
+    uint8_t auto_thresh = probe->auto_threshold;
     double std_mul = probe->std_multiplier;
     irq_enable();
     sendf("analog_probe_tare oid=%c tare=%u thresh=%u auto_th=%u std_mul=%u"

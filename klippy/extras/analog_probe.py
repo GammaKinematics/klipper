@@ -238,7 +238,7 @@ class AnalogProbe:
             self._gcmd.respond_info("Record finished")
             self.save_logs()
 
-    def _handle_full_buffer(self):
+    def _handle_full_buffer(self, params):
         self._buffer_full = True
 
     def reset_logs(self):

@@ -180,8 +180,14 @@ analog_probe_logging(struct timer *t)
     if (sample_delay) {
         if (sample_delay > probe->rest_time) {
             probe->time.waketime += sample_delay;
+            if (probe->is_logging) {
+                probe->log_time -= sample_delay;
+            }
         } else {
             probe->time.waketime += probe->rest_time;
+            if (probe->is_logging) {
+                probe->log_time -= probe->rest_time;
+            }
         }
         return SF_RESCHEDULE;
     }
@@ -204,7 +210,6 @@ analog_probe_logging(struct timer *t)
         uint8_t cur_buf = probe->current_buffer_length;
         uint8_t trig = is_triggered(probe);
         fin = probe->log_time < 0;
-        probe->log_time -= probe->rest_time;
         irq_enable();
         sendf("analog_probe_log oid=%c ts=%u raw=%u cur=%u tare=%u thresh=%u auto_th=%u std_mul=%u tare_buf=%u cur_buf=%u trig=%u finished=%u",
             oid, timestamp, raw, (int)(cur*1000), (int)(tar*1000), (int)(thresh*1000), auto_thresh, (int)(std_mul*100), tare_buf, cur_buf, trig, fin);
@@ -222,6 +227,9 @@ analog_probe_logging(struct timer *t)
         return SF_DONE;
     } else {
         probe->time.waketime += probe->rest_time;
+        if (probe->is_logging) {
+            probe->log_time -= probe->rest_time;
+        }
         return SF_RESCHEDULE;
     }
 }
@@ -359,7 +367,7 @@ command_do_tare(uint32_t *args) {
     }
     irq_disable();
     double tar = probe->tare;
-    double thresh = 69;//probe->threshold;
+    double thresh = probe->threshold;
     uint8_t auto_thresh = probe->auto_threshold;
     double std_mul = probe->std_multiplier;
     irq_enable();

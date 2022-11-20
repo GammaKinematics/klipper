@@ -108,29 +108,24 @@ analog_probe_event(struct timer *t)
 
     probe->raw_value = gpio_adc_read(probe->pin);
     update_buffer(probe);
-    if ((probe->buffer_index = probe->buffer_length) && (probe->tare <= 0)) {
-        probe->tare = 0.0;
-        for (int i = probe->buffer_index-probe->tare_buffer_length+1; i <= probe->buffer_index; i++) {
-            probe->tare += probe->buffer[i];
-        }
-        probe->tare /= probe->tare_buffer_length;
-        if (probe->auto_threshold) {
-            probe->threshold = 0.0;
-            for (int i = probe->buffer_index-probe->tare_buffer_length+1; i <= probe->buffer_index; i++) {
-                probe->threshold += (probe->buffer[i]-probe->tare)*(probe->buffer[i]-probe->tare);
-            }
-            probe->threshold = (probe->std_multiplier*sqroot(probe->threshold/probe->tare_buffer_length))/probe->tare;
-        }
-    }
-    if ((probe->tare <= 0) || !(is_triggered(probe) && probe->target)) {
-        // No match - reschedule for the next attempt
-        probe->time.waketime += probe->rest_time;
-        return SF_RESCHEDULE;
+
+    if (is_triggered(probe) && probe->target) {
+        trsync_do_trigger(probe->ts, probe->trigger_reason);
+        return SF_DONE;
     }
 
-    probe->nextwake = probe->time.waketime + probe->rest_time;
-    probe->time.func = analog_probe_oversample_event;
-    return analog_probe_oversample_event(t);
+    probe->time.waketime += probe->rest_time;
+    return SF_RESCHEDULE;
+
+    // if ((probe->tare <= 0) || !(is_triggered(probe) && probe->target)) {
+    //     // No match - reschedule for the next attempt
+    //     probe->time.waketime += probe->rest_time;
+    //     return SF_RESCHEDULE;
+    // }
+
+    // probe->nextwake = probe->time.waketime + probe->rest_time;
+    // probe->time.func = analog_probe_oversample_event;
+    // return analog_probe_oversample_event(t);
 }
 
 // Timer callback for an analog probe that is sampling extra times
@@ -209,7 +204,7 @@ analog_probe_logging(struct timer *t)
         fin = probe->time.waketime > probe->log_time;
         irq_enable();
         sendf("analog_probe_log oid=%c ts=%u raw=%u cur=%u tare=%u thresh=%u auto_th=%u std_mul=%u tare_buf=%u cur_buf=%u trig=%u finished=%u",
-            oid, timestamp, raw, (int)cur*1000, (int)tar*1000, (int)thresh*1000, auto_thresh, (int)std_mul*100, tare_buf, cur_buf, trig, fin);
+            oid, timestamp, raw, (int)(cur*1000), (int)(tar*1000), (int)(thresh*1000), auto_thresh, (int)(std_mul*100), tare_buf, cur_buf, trig, fin);
     } else {
         fin = probe->buffer_index == probe->tare_buffer_length;
         irq_enable();
@@ -361,7 +356,7 @@ command_do_tare(uint32_t *args) {
     double std_mul = probe->std_multiplier;
     irq_enable();
     sendf("analog_probe_tare oid=%c tare=%u thresh=%u auto_th=%u std_mul=%u"
-          , args[0], (int)tar*1000, (int)thresh*1000, auto_thresh, (int)std_mul*100);
+          , args[0], (int)(tar*1000), (int)(thresh*1000), auto_thresh, (int)(std_mul*100));
 }
 DECL_COMMAND(command_do_tare, "analog_probe_do_tare oid=%c");
 
@@ -394,6 +389,6 @@ command_report(uint32_t *args) {
     irq_enable();
 
     sendf("analog_probe_report oid=%c raw=%u cur=%u tare=%u thresh=%u auto_th=%u std_mul=%u tare_buf=%u cur_buf=%u"
-          , args[0], raw, (int)cur*1000, (int)tar*1000, (int)thresh*1000, auto_thresh, (int)std_mul*100, tare_buf, cur_buf);
+          , args[0], raw, (int)(cur*1000), (int)(tar*1000), (int)(thresh*1000), auto_thresh, (int)(std_mul*100), tare_buf, cur_buf);
 }
 DECL_COMMAND(command_report, "analog_probe_query_report oid=%c");

@@ -219,7 +219,7 @@ class AnalogProbe:
         print_time = self.printer.lookup_object('toolhead').get_last_move_time()
         clock = self.mcu_endstop._mcu.print_time_to_clock(print_time)
         rest_ticks = self.mcu_endstop._mcu.print_time_to_clock(print_time+rest_time) - clock
-        log_ticks = self.mcu_endstop._mcu.print_time_to_clock(print_time+log_time)
+        log_ticks = self.mcu_endstop._mcu.print_time_to_clock(print_time+log_time) - clock
         self.reset_logs()
         self.mcu_endstop._start_logging_cmd.send([self.mcu_endstop._oid, clock, rest_ticks, log_ticks])
 

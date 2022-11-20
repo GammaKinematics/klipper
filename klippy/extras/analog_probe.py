@@ -200,10 +200,15 @@ class AnalogProbe:
         rest_ticks = self.mcu_endstop._mcu.print_time_to_clock(print_time+rest_time) - clock
         log_ticks = self.mcu_endstop._mcu.print_time_to_clock(print_time+log_time)
         self.reset_logs()
+        logging.info("CPGK start logging")
+        logging.info(clock)
+        logging.info(rest_time)
+        logging.info(rest_ticks)
+        logging.info(log_time)
+        logging.info(log_ticks)
         self.mcu_endstop._start_logging_cmd.send([self.mcu_endstop._oid, clock, rest_ticks, log_ticks])
 
     def _handle_logging(self, params):
-        logging.info(float(params['thresh'])/1000)
         self._ts.append(int(params['ts']))
         self._raws.append(int(params['raw']))
         self._curs.append(float(params['cur'])/1000)

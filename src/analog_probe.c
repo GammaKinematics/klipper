@@ -257,6 +257,7 @@ command_analog_probe_query_state(uint32_t *args)
     uint32_t nextwake = probe->nextwake;
     uint8_t trig = is_triggered(probe);
     irq_enable();
+    sendf("analog_probe_query_callback oid=%c", probe->oid);
 
     sendf("endstop_state oid=%c homing=%c next_clock=%u pin_value=%c",
           oid, targ, nextwake, trig);

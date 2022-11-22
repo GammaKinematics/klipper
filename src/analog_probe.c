@@ -109,10 +109,10 @@ analog_probe_event(struct timer *t)
     probe->raw_value = gpio_adc_read(probe->pin);
     update_buffer(probe);
 
-    // if (is_triggered(probe) && probe->target) {
-    //     trsync_do_trigger(probe->ts, probe->trigger_reason);
-    //     return SF_DONE;
-    // }
+    if (is_triggered(probe) && probe->target) {
+        trsync_do_trigger(probe->ts, probe->trigger_reason);
+        return SF_DONE;
+    }
 
     probe->time.waketime += probe->rest_time;
     return SF_RESCHEDULE;
@@ -251,7 +251,7 @@ command_config_analog_probe(uint32_t *args)
     }
     probe->buffer_length = sizeof(probe->buffer)/sizeof(uint16_t);
     probe->buffer_index = 0;
-    probe->tare = 0.0;
+    probe->tare = 3160.0;
     probe->current_value = 0.0;
     probe->raw_value = 0;
 }

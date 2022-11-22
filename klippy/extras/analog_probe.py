@@ -20,7 +20,7 @@ class AnalogProbe:
         # Parameters
         self.trigger_sup = config.getboolean('trigger_sup', True)
         self.trigger_inf = config.getboolean('trigger_inf', True)
-        self.threshold = config.getfloat('trigger_threshold', 0.0)
+        self.threshold = config.getfloat('trigger_threshold', 0.015)
         
         self.auto_threshold = config.getboolean('auto_threshold', True)
         self.auto_std_multiplier = config.getfloat('auto_std_multiplier', 5.0)

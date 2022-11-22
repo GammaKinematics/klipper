@@ -52,7 +52,7 @@ struct analog_probe {
     uint8_t target, sample_count, trigger_count, trigger_reason;
 };
 
-static uint_fast8_t analog_probe_oversample_event(struct timer *t);
+//static uint_fast8_t analog_probe_oversample_event(struct timer *t);
 
 void
 update_buffer(struct analog_probe *pr) {
@@ -110,7 +110,7 @@ analog_probe_event(struct timer *t)
     update_buffer(probe);
     uint8_t trig = is_triggered(probe);
     
-    sendf("analog_probe_trig oid=%c trig=%u", probe->oid, trig);
+    sendf("analog_probe_trig oid=%c trig=%u cur=%u tare=%u thresh=%u", probe->oid, trig, (int)(probe->current_value*1000), (int)(probe->tare*1000), (int)(probe->threshold*1000));
 
     if (trig && probe->target) {
         trsync_do_trigger(probe->ts, probe->trigger_reason);

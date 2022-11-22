@@ -90,14 +90,12 @@ class AnalogProbe:
                                                 self.auto_threshold*1, int(self.auto_std_multiplier*100),
                                                 self.tare_buffer_len, self.current_buffer_len))
         self.mcu_endstop._mcu.add_config_cmd(
-            "analog_probe_home oid=%d clock=0 sample_ticks=0 sample_count=0"
-            " rest_ticks=0 pin_value=0 trsync_oid=0 trigger_reason=0"
+            "analog_probe_home oid=%d clock=0 rest_ticks=0 pin_value=0 trsync_oid=0 trigger_reason=0"
             % (self.mcu_endstop._oid), on_restart=True)
         # Lookup commands
         cmd_queue = self.mcu_endstop._trsyncs[0].get_command_queue()
         self.mcu_endstop._home_cmd = self.mcu_endstop._mcu.lookup_command(
-            "analog_probe_home oid=%c clock=%u sample_ticks=%u sample_count=%c"
-            " rest_ticks=%u pin_value=%c trsync_oid=%c trigger_reason=%c",
+            "analog_probe_home oid=%c clock=%u rest_ticks=%u pin_value=%c trsync_oid=%c trigger_reason=%c",
             cq=cmd_queue)
         self.mcu_endstop._query_cmd = self.mcu_endstop._mcu.lookup_query_command(
             "analog_probe_query_state oid=%c",

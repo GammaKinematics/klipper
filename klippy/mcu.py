@@ -137,7 +137,9 @@ class MCU_endstop:
         self._invert = pin_params['invert']
         self._oid = self._mcu.create_oid()
         self._home_cmd = self._query_cmd = None
+        self._is_ADC = False
         if not pin_params.get('is_adc', False):
+            self._is_ADC = True
             self._mcu.register_config_callback(self._build_config)
         self._trigger_completion = None
         self._rest_ticks = 0
@@ -197,18 +199,27 @@ class MCU_endstop:
         etrsync = self._trsyncs[0]
         ffi_main, ffi_lib = chelper.get_ffi()
         ffi_lib.trdispatch_start(self._trdispatch, etrsync.REASON_HOST_REQUEST)
-        self._home_cmd.send(
-            [self._oid, clock, self._mcu.seconds_to_clock(sample_time),
-             sample_count, rest_ticks, triggered ^ self._invert,
-             etrsync.get_oid(), etrsync.REASON_ENDSTOP_HIT], reqclock=clock)
+        if self._is_ADC:
+            self._home_cmd.send(
+                [self._oid, clock, rest_ticks, triggered ^ self._invert,
+                etrsync.get_oid(), etrsync.REASON_ENDSTOP_HIT], reqclock=clock)
+        else:
+            self._home_cmd.send(
+                [self._oid, clock, self._mcu.seconds_to_clock(sample_time),
+                sample_count, rest_ticks, triggered ^ self._invert,
+                etrsync.get_oid(), etrsync.REASON_ENDSTOP_HIT], reqclock=clock)
         return self._trigger_completion
     def home_wait(self, home_end_time):
+        logging.info("CPGK home wait called")
         etrsync = self._trsyncs[0]
         etrsync.set_home_end_time(home_end_time)
         if self._mcu.is_fileoutput():
             self._trigger_completion.complete(True)
         self._trigger_completion.wait()
-        self._home_cmd.send([self._oid, 0, 0, 0, 0, 0, 0, 0])
+        if self._is_ADC:
+            self._home_cmd.send([self._oid, 0, 0, 0, 0, 0])
+        else:
+            self._home_cmd.send([self._oid, 0, 0, 0, 0, 0, 0, 0])
         ffi_main, ffi_lib = chelper.get_ffi()
         ffi_lib.trdispatch_stop(self._trdispatch)
         res = [trsync.stop() for trsync in self._trsyncs]

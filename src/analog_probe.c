@@ -254,7 +254,7 @@ command_analog_probe_query_state(uint32_t *args)
 
     irq_disable();
     uint8_t targ = probe->target;
-    uint32_t nextwake = probe->nextwake;
+    uint32_t nextwake = 69;//probe->nextwake;
     uint8_t trig = is_triggered(probe);
     irq_enable();
     sendf("analog_probe_query_callback oid=%c", probe->oid);

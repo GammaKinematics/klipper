@@ -52,7 +52,6 @@ struct analog_probe {
     uint8_t target, sample_count, trigger_count, trigger_reason;
 };
 
-//static uint_fast8_t analog_probe_oversample_event(struct timer *t);
 
 void
 update_buffer(struct analog_probe *pr) {
@@ -115,7 +114,7 @@ analog_probe_event(struct timer *t)
         if (probe->trigger_count < probe->sample_count) {
             probe->time.waketime = probe->nextwake;
         } else {
-            probe->time.waketime = += probe->rest_time;
+            probe->time.waketime += probe->rest_time;
             probe->nextwake = probe->time.waketime;
         }
         probe->trigger_count = probe->sample_count;

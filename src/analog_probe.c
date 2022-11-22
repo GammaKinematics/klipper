@@ -87,6 +87,7 @@ is_triggered(struct analog_probe *pr){
     } else {
         sup_trig = 0;
     }
+    sendf("analog_probe_trig_fun oid=%c trig_inf=%u trig_sup=%u cur=%u tare=%u thresh=%u", pr->oid, inf_trig, sup_trig, (int)(pr->current_value*1000), (int)(pr->tare*1000), (int)(pr->threshold*1000));
     return inf_trig || sup_trig;
 }
 

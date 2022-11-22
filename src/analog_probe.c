@@ -305,8 +305,8 @@ command_analog_probe_home(uint32_t *args)
     probe->ts = trsync_oid_lookup(args[6]);
     probe->trigger_reason = args[7];
     sched_add_timer(&probe->time);
-    probe->tare = 0.0;
-    probe->buffer_index = 0;
+    // probe->tare = 0.0;
+    // probe->buffer_index = 0;
 }
 DECL_COMMAND(command_analog_probe_home,
              "analog_probe_home oid=%c clock=%u sample_ticks=%u sample_count=%c"

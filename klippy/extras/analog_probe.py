@@ -123,7 +123,7 @@ class AnalogProbe:
         while not self._buffer_full:
             time.sleep(0.5)
         self.cmd_MAKE_TARE(self.gcode.create_gcode_command("", "", {}))
-        return self.mcu_endstop.home_start(print_time, sample_time, sample_count, rest_time, triggered)
+        return self.mcu_endstop.home_start(print_time, sample_time, sample_count, self.mcu_endstop._mcu.print_time_to_clock(print_time+0.1) - clock, triggered)
 
     def raise_probe(self): #modifs
         toolhead = self.printer.lookup_object('toolhead')

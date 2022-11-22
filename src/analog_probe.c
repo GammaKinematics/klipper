@@ -108,8 +108,11 @@ analog_probe_event(struct timer *t)
 
     probe->raw_value = gpio_adc_read(probe->pin);
     update_buffer(probe);
+    uint8_t trig = is_triggered(probe);
+    
+    sendf("analog_probe_trig oid=%c trig=%u", probe->oid, trig);
 
-    if (is_triggered(probe) && probe->target) {
+    if (trig && probe->target) {
         trsync_do_trigger(probe->ts, probe->trigger_reason);
         return SF_DONE;
     }

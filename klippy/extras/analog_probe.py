@@ -176,7 +176,8 @@ class AnalogProbe:
         clock = self.mcu_endstop._mcu.print_time_to_clock(print_time)
         rest_ticks = self.mcu_endstop._mcu.print_time_to_clock(print_time+0.001) - clock
         self.mcu_endstop._start_logging_cmd.send([self.mcu_endstop._oid, clock, rest_ticks, 0])
-        time.sleep(1)
+        gcmd.respond_info("Probe initialized")
+        time.sleep(3)
         #self.cmd_MAKE_TARE(self.gcode.create_gcode_command("", "", {}))
         params = self.mcu_endstop._do_tare_cmd.send([self.mcu_endstop._oid])
         self.tare = float(params['tare'])/1000

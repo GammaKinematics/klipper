@@ -234,7 +234,7 @@ command_analog_probe_init(uint32_t *args)
     gpio_adc_cancel_sample(probe->pin);
     probe->time.waketime = args[1];
     probe->rest_time = args[2];
-    probe->log_time = args[3];
+    probe->log_time = args[1] + args[3];
     sendf("analog_probe_debugloginit oid=%c wt=%u lt=%u", probe->oid, probe->time.waketime, probe->log_time);
     probe->buffer_index = 0;
     probe->time.func = analog_probe_logging;

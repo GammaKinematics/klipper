@@ -168,7 +168,6 @@ analog_probe_logging(struct timer *t)
         uint8_t trig = is_triggered(probe);
         fin = probe->time.waketime > probe->log_time;
         irq_enable();
-        sendf("analog_probe_debuglog oid=%c wt=%u lt=%u", oid, probe->time.waketime, probe->log_time);
         sendf("analog_probe_log oid=%c ts=%u raw=%u cur=%u tare=%u thresh=%u auto_th=%u std_mul=%u tare_buf=%u cur_buf=%u trig=%u finished=%u",
             oid, timestamp, raw, (int)(cur*1000), (int)(tar*1000), (int)(thresh*1000), auto_thresh, (int)(std_mul*100), tare_buf, cur_buf, trig, fin);
     } else {
@@ -234,7 +233,7 @@ command_analog_probe_init(uint32_t *args)
     gpio_adc_cancel_sample(probe->pin);
     probe->time.waketime = args[1];
     probe->rest_time = args[2];
-    probe->log_time = args[1] + args[3];
+    probe->log_time = args[3];
     sendf("analog_probe_debugloginit oid=%c wt=%u lt=%u", probe->oid, probe->time.waketime, probe->log_time);
     probe->buffer_index = 0;
     probe->time.func = analog_probe_logging;

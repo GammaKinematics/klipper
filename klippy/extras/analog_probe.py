@@ -219,8 +219,8 @@ class AnalogProbe:
         self._gcmd = gcmd
         print_time = self.printer.lookup_object('toolhead').get_last_move_time()
         clock = self.mcu_endstop._mcu.print_time_to_clock(print_time)
-        rest_ticks = self.mcu_endstop._mcu.print_time_to_clock(print_time+rest_time) - clock
-        log_ticks = self.mcu_endstop._mcu.print_time_to_clock(print_time+log_time) - clock
+        rest_ticks = self.mcu_endstop._mcu.print_time_to_clock(rest_time)
+        log_ticks = self.mcu_endstop._mcu.print_time_to_clock(print_time + log_time)
         self.reset_logs()
         logging.info("CGPK log init")
         logging.info(clock)

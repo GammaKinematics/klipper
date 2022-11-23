@@ -122,6 +122,7 @@ class AnalogProbe:
         self.mcu_endstop._start_logging_cmd.send([self.mcu_endstop._oid, clock, rest_ticks, 0])
         while not self._buffer_full:
             time.sleep(0.5)
+        time.sleep(1)
         self.cmd_MAKE_TARE(self.gcode.create_gcode_command("", "", {}))
         return self.mcu_endstop.home_start(print_time, sample_time, 1, rest_time, triggered)
 
@@ -221,6 +222,12 @@ class AnalogProbe:
         rest_ticks = self.mcu_endstop._mcu.print_time_to_clock(print_time+rest_time) - clock
         log_ticks = self.mcu_endstop._mcu.print_time_to_clock(print_time+log_time) - clock
         self.reset_logs()
+        logging.info("CGPK log init")
+        logging.info(clock)
+        logging.info(rest_time)
+        logging.info(rest_ticks)
+        logging.info(log_time)
+        logging.info(log_ticks)
         self.mcu_endstop._start_logging_cmd.send([self.mcu_endstop._oid, clock, rest_ticks, log_ticks])
 
     def _handle_logging(self, params):

@@ -174,7 +174,6 @@ analog_probe_logging(struct timer *t)
     } else {
         fin = probe->buffer_index == probe->tare_buffer_length;
         irq_enable();
-        sendf("analog_probe_debugfull oid=%c index=%u buflen=%u", oid, probe->buffer_index, probe->tare_buffer_length);
         if (fin) {
             sendf("analog_probe_full oid=%c", oid);
         }
@@ -236,6 +235,7 @@ command_analog_probe_init(uint32_t *args)
     probe->time.waketime = args[1];
     probe->rest_time = args[2];
     probe->log_time = args[3];
+    sendf("analog_probe_debugloginit oid=%c wt=%u lt=%u", oid, probe->time.waketime, probe->log_time);
     probe->buffer_index = 0;
     probe->time.func = analog_probe_logging;
     sched_add_timer(&probe->time);

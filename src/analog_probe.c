@@ -90,17 +90,17 @@ is_triggered(struct analog_probe *pr){
 void 
 tare(struct analog_probe *pr) {
     if (pr->n_samples >= pr->tare_buffer_length) {
-        probe->tare = 0.0;
-        for (int i = 0; i < probe->tare_buffer_length; i++) {
-            probe->tare += probe->buffer[i];
+        pr->tare = 0.0;
+        for (int i = 0; i < pr->tare_buffer_length; i++) {
+            pr->tare += pr->buffer[i];
         }
-        probe->tare /= probe->tare_buffer_length;
-        if (probe->auto_threshold) {
-            probe->threshold = 0.0;
-            for (int i = 0; i < probe->tare_buffer_length; i++) {
-                probe->threshold += (probe->buffer[i]-probe->tare)*(probe->buffer[i]-probe->tare);
+        pr->tare /= pr->tare_buffer_length;
+        if (pr->auto_threshold) {
+            pr->threshold = 0.0;
+            for (int i = 0; i < pr->tare_buffer_length; i++) {
+                pr->threshold += (pr->buffer[i]-pr->tare)*(pr->buffer[i]-pr->tare);
             }
-            probe->threshold = (probe->std_multiplier*sqroot(probe->threshold/probe->tare_buffer_length))/probe->tare;
+            pr->threshold = (pr->std_multiplier*sqroot(pr->threshold/pr->tare_buffer_length))/pr->tare;
         }
     }
 }

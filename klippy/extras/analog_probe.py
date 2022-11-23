@@ -116,14 +116,14 @@ class AnalogProbe:
         self.mcu_endstop._mcu.register_response(self._handle_logging, "analog_probe_logs", self.mcu_endstop._oid)
 
     def home_start(self, print_time, sample_time, sample_count, rest_time, triggered=True):
-        self._buffer_full = False
-        clock = self.mcu_endstop._mcu.print_time_to_clock(print_time)
-        rest_ticks = self.mcu_endstop._mcu.print_time_to_clock(print_time+rest_time) - clock
-        self.mcu_endstop._start_logging_cmd.send([self.mcu_endstop._oid, clock, rest_ticks, 0])
-        while not self._buffer_full:
-            time.sleep(0.5)
-        time.sleep(1)
-        self.cmd_MAKE_TARE(self.gcode.create_gcode_command("", "", {}))
+        # self._buffer_full = False
+        # clock = self.mcu_endstop._mcu.print_time_to_clock(print_time)
+        # rest_ticks = self.mcu_endstop._mcu.print_time_to_clock(print_time+rest_time) - clock
+        # self.mcu_endstop._start_logging_cmd.send([self.mcu_endstop._oid, clock, rest_ticks, 0])
+        # while not self._buffer_full:
+        #     time.sleep(0.5)
+        # time.sleep(1)
+        # self.cmd_MAKE_TARE(self.gcode.create_gcode_command("", "", {}))
         return self.mcu_endstop.home_start(print_time, sample_time, 1, rest_time, triggered)
 
     def raise_probe(self): #modifs

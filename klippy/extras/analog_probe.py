@@ -1,5 +1,5 @@
 # Analog probe support
-import logging, multiprocessing, os, time
+import logging, multiprocessing, os
 from . import probe
 
 
@@ -51,6 +51,10 @@ class AnalogProbe:
         self.gcode.register_command('UPDATE_BUFFER_LEN', self.cmd_UPDATE_BUFFER_LEN,
                                     desc=self.cmd_UPDATE_BUFFER_LEN_help)
 
+        self.gcode.register_command('INIT_PROBE',
+                                    self.cmd_INIT_PROBE,
+                                    desc=self.cmd_INIT_PROBE_help)
+
         self.gcode.register_command('MAKE_TARE',
                                     self.cmd_MAKE_TARE,
                                     desc=self.cmd_MAKE_TARE_help)
@@ -69,6 +73,7 @@ class AnalogProbe:
         self.reset_logs()
 
     cmd_UPDATE_BUFFER_LEN_help = "Update the lenght of the buffers."
+    cmd_INIT_PROBE_help = "Initialize the probe."
     cmd_MAKE_TARE_help = "Tare the probe."
     cmd_UPDATE_THRESHOLD_help = "Update the threshold of the probe."
     cmd_START_LOGGING_help = "Start logging the probe values."
@@ -112,18 +117,9 @@ class AnalogProbe:
                                                                                   "analog_probe_report oid=%c raw=%u cur=%u tare=%u thresh=%u auto_th=%u std_mul=%u tare_buf=%u cur_buf=%u",
                                                                                   oid=self.mcu_endstop._oid, cq=cmd_queue)
         self.mcu_endstop._start_logging_cmd = self.mcu_endstop._mcu.lookup_command("analog_probe_init oid=%c clock=%u rest_ticks=%u log_ticks=%u", cq=cmd_queue)
-        self.mcu_endstop._mcu.register_response(self._handle_full_buffer, "analog_probe_full", self.mcu_endstop._oid)
         self.mcu_endstop._mcu.register_response(self._handle_logging, "analog_probe_logs", self.mcu_endstop._oid)
 
     def home_start(self, print_time, sample_time, sample_count, rest_time, triggered=True):
-        # # self._buffer_full = False
-        # clock = self.mcu_endstop._mcu.print_time_to_clock(print_time)
-        # rest_ticks = self.mcu_endstop._mcu.print_time_to_clock(print_time+rest_time) - clock
-        # self.mcu_endstop._start_logging_cmd.send([self.mcu_endstop._oid, clock, rest_ticks, 0])
-        # # while not self._buffer_full:
-        # #     time.sleep(0.5)
-        # time.sleep(1)
-        # self.cmd_MAKE_TARE(self.gcode.create_gcode_command("", "", {}))
         return self.mcu_endstop.home_start(print_time, sample_time, 1, rest_time, triggered)
 
     def raise_probe(self): #modifs
@@ -171,14 +167,14 @@ class AnalogProbe:
         self.current_buffer_len = gcmd.get_int("CURRENT", 5)
         self.mcu_endstop._update_buffer_cmd.send([self.mcu_endstop._oid, self.tare_buffer_len, self.current_buffer_len])
 
-    def cmd_MAKE_TARE(self, gcmd):
-        print_time = self.printer.lookup_object('toolhead').get_last_move_time()
-        clock = self.mcu_endstop._mcu.print_time_to_clock(print_time)
-        rest_ticks = self.mcu_endstop._mcu.print_time_to_clock(print_time+0.001) - clock
+    def cmd_INIT_PROBE(self, gcmd):
+        rest_time = gcmd.get_float("TIMESTEP", 0.001)
+        clock = self.mcu_endstop._mcu.print_time_to_clock(self.printer.lookup_object('toolhead').get_last_move_time())
+        rest_ticks = self.mcu_endstop._mcu.print_time_to_clock(rest_time)
         self.mcu_endstop._start_logging_cmd.send([self.mcu_endstop._oid, clock, rest_ticks, 0])
         gcmd.respond_info("Probe initialized")
-        time.sleep(3)
-        #self.cmd_MAKE_TARE(self.gcode.create_gcode_command("", "", {}))
+
+    def cmd_MAKE_TARE(self, gcmd):
         params = self.mcu_endstop._do_tare_cmd.send([self.mcu_endstop._oid])
         self.tare = float(params['tare'])/1000
         self.threshold = float(params['thresh'])/1000
@@ -229,12 +225,6 @@ class AnalogProbe:
         rest_ticks = self.mcu_endstop._mcu.print_time_to_clock(rest_time)
         log_ticks = self.mcu_endstop._mcu.print_time_to_clock(print_time + log_time)
         self.reset_logs()
-        logging.info("CGPK log init")
-        logging.info(clock)
-        logging.info(rest_time)
-        logging.info(rest_ticks)
-        logging.info(log_time)
-        logging.info(log_ticks)
         self.mcu_endstop._start_logging_cmd.send([self.mcu_endstop._oid, clock, rest_ticks, log_ticks])
 
     def _handle_logging(self, params):
@@ -251,9 +241,6 @@ class AnalogProbe:
         if bool(params['finished']):
             self._gcmd.respond_info("Record finished")
             self.save_logs()
-
-    def _handle_full_buffer(self, params):
-        self._buffer_full = True
 
     def reset_logs(self):
         self._ts = []

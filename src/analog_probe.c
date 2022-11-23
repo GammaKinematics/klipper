@@ -11,7 +11,7 @@
 #include "command.h" // DECL_COMMAND
 #include "sched.h" // struct timer
 #include "trsync.h" // trsync_do_trigger
-#include <math.h>
+
 
 #define ANALOG_PROBE_BUFFER_MAX_LENGTH 200
 
@@ -131,7 +131,6 @@ analog_probe_event(struct timer *t)
 
     // Send logging of the current probe infos if asked
     if (probe->log_time) {
-        sendf("CGPK_logging oid=%c", 69);
         irq_disable();
         uint8_t oid = probe->oid;
         uint32_t timestamp = probe->time.waketime;
@@ -160,7 +159,6 @@ analog_probe_event(struct timer *t)
     
     // Check if the probe is triggered and stop the movement if so
     if (probe->sample_count && (probe->tare > 0)) {
-        sendf("CGPK_trigger_check oid=%c", 69);
         if (!(is_triggered(probe) && probe->target)) {
             // No match - reschedule for the next attempt
             if (probe->trigger_count < probe->sample_count) {
@@ -179,7 +177,6 @@ analog_probe_event(struct timer *t)
 
         if (!(probe->trigger_count - 1)) {
             probe->sample_count = 0;
-            sendf("CGPK_probing_triggered oid=%c", 69);
             trsync_do_trigger(probe->ts, probe->trigger_reason);
             return SF_DONE;
         }

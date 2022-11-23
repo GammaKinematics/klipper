@@ -115,6 +115,7 @@ analog_probe_event(struct timer *t)
     // Check if the ADC is ready to spit a new value
     uint32_t sample_delay = gpio_adc_sample(probe->pin);
     if (sample_delay) {
+        sendf("CGPK_sample_delay oid=%u", sample_delay);
         if (sample_delay > probe->rest_time) {
             probe->time.waketime += sample_delay;
         } else {
@@ -130,6 +131,7 @@ analog_probe_event(struct timer *t)
 
     // Send logging of the current probe infos if asked
     if (probe->log_time) {
+        sendf("CGPK_logging oid=%c", 69);
         irq_disable();
         uint8_t oid = probe->oid;
         uint32_t timestamp = probe->time.waketime;
@@ -158,6 +160,7 @@ analog_probe_event(struct timer *t)
     
     // Check if the probe is triggered and stop the movement if so
     if (probe->sample_count && (probe->tare > 0)) {
+        sendf("CGPK_trigger_check oid=%c", 69);
         if (!(is_triggered(probe) && probe->target)) {
             // No match - reschedule for the next attempt
             if (probe->trigger_count < probe->sample_count) {
@@ -175,6 +178,8 @@ analog_probe_event(struct timer *t)
         }
 
         if (!(probe->trigger_count - 1)) {
+            probe->sample_count = 0;
+            sendf("CGPK_probing_triggered oid=%c", 69);
             trsync_do_trigger(probe->ts, probe->trigger_reason);
             return SF_DONE;
         }
@@ -184,11 +189,11 @@ analog_probe_event(struct timer *t)
     }
 
     // Default rescheduling
+    sendf("CGPK_default_resched oid=%c", 69);
     probe->time.waketime += probe->rest_time;
     return SF_RESCHEDULE;
 }
 
-//sendf("analog_probe_full oid=%c", oid);
 
 void
 command_config_analog_probe(uint32_t *args)

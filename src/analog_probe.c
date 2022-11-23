@@ -223,7 +223,7 @@ command_config_analog_probe(uint32_t *args)
     probe->raw_value = 0;
 
     probe->sample_count = 0;
-    prob->log_time = 0;
+    probe->log_time = 0;
 }
 DECL_COMMAND(command_config_analog_probe, "config_analog_probe oid=%c pin=%c" 
                                           " trig_sup=%u trig_inf=%u trig_th=%u"

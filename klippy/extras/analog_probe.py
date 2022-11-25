@@ -193,7 +193,7 @@ class AnalogProbe:
         if self.auto_threshold:
             self.auto_std_multiplier = gcmd.get_float("STD_MULTIPLIER", 5.0)
         else:
-            self.threshold = gcmd.get_float("THRESHOLD", 0.5)
+            self.threshold = gcmd.get_float("THRESHOLD", 0.05)
         self.mcu_endstop._set_threshold_cmd.send([self.mcu_endstop._oid, int(self.threshold*10), self.auto_threshold*1, int(self.auto_std_multiplier*100)])
 
     def cmd_QUERY_STATE(self, gcmd):
@@ -216,7 +216,7 @@ class AnalogProbe:
                                                                                 self.current_buffer_len))
 
     def cmd_START_LOGGING(self, gcmd):
-        rest_time = gcmd.get_float("TIMESTEP", 0.000015)
+        rest_time = gcmd.get_float("TIMESTEP", 0.001)
         log_time = gcmd.get_float("DURATION", 10.0)
         self._logfile_name = gcmd.get("FILENAME", "analog_probe_logs")
         self._gcmd = gcmd

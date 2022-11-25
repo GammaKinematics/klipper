@@ -157,7 +157,7 @@ analog_probe_event(struct timer *t)
     }
     
     // Check if the probe is triggered and stop the movement if so
-    if (probe->sample_count && (probe->tare > 0) && (pr->n_samples >= pr->current_buffer_length)) {
+    if (probe->sample_count && (probe->tare > 0) && (probe->n_samples >= probe->current_buffer_length)) {
         if (!(is_triggered(probe) && probe->target)) {
             // No match - reschedule for the next attempt
             if (probe->trigger_count < probe->sample_count) {

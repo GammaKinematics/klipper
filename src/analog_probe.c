@@ -319,7 +319,7 @@ void
 command_set_threshold(uint32_t *args){
     struct analog_probe *probe = oid_lookup(args[0], command_config_analog_probe);
     if (!args[2]) {
-        probe->threshold = (double)args[1]/10;
+        probe->threshold = (double)args[1]/1000;
         probe->auto_threshold = 0;
     } else {
         probe->auto_threshold = 1;

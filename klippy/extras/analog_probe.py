@@ -20,10 +20,10 @@ class AnalogProbe:
         # Parameters
         self.trigger_sup = config.getboolean('trigger_sup', True)
         self.trigger_inf = config.getboolean('trigger_inf', True)
-        self.threshold = config.getfloat('trigger_threshold', 0.015)
+        self.threshold = config.getfloat('trigger_threshold', 0.03)
         
         self.auto_threshold = config.getboolean('auto_threshold', True)
-        self.auto_std_multiplier = config.getfloat('auto_std_multiplier', 5.0)
+        self.auto_std_multiplier = config.getfloat('auto_std_multiplier', 3.0)
 
         self.tare_buffer_len = config.getint('tare_buffer_len', 100)
         self.current_buffer_len = config.getint('current_buffer_len', 5)
@@ -191,10 +191,10 @@ class AnalogProbe:
     def cmd_UPDATE_THRESHOLD(self, gcmd):
         self.auto_threshold = bool(gcmd.get_int("AUTO", True))
         if self.auto_threshold:
-            self.auto_std_multiplier = gcmd.get_float("STD_MULTIPLIER", 5.0)
+            self.auto_std_multiplier = gcmd.get_float("STD_MULTIPLIER", 3.0)
         else:
-            self.threshold = gcmd.get_float("THRESHOLD", 0.05)
-        self.mcu_endstop._set_threshold_cmd.send([self.mcu_endstop._oid, int(self.threshold*10), self.auto_threshold*1, int(self.auto_std_multiplier*100)])
+            self.threshold = gcmd.get_float("THRESHOLD", 0.03)
+        self.mcu_endstop._set_threshold_cmd.send([self.mcu_endstop._oid, int(self.threshold*1000), self.auto_threshold*1, int(self.auto_std_multiplier*100)])
 
     def cmd_QUERY_STATE(self, gcmd):
         params = self.mcu_endstop._report_cmd.send([self.mcu_endstop._oid])

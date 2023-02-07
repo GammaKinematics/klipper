@@ -44,6 +44,7 @@ class MCU_trsync:
         return list(self._steppers)
     def _build_config(self):
         logging.info("CPGK")
+        logging.info(self._oid)
         mcu = self._mcu
         # Setup config
         mcu.add_config_cmd("config_trsync oid=%d" % (self._oid,))

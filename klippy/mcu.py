@@ -70,6 +70,9 @@ class MCU_trsync:
         state_tag = mcu.lookup_command_tag(
             "trsync_state oid=%c can_trigger=%c trigger_reason=%c clock=%u")
         ffi_main, ffi_lib = chelper.get_ffi()
+        logging.info(self._trdispatch, mcu._serial.get_serialqueue(),
+            self._cmd_queue, self._oid, set_timeout_tag, trigger_tag,
+            state_tag, ffi_lib.free)
         self._trdispatch_mcu = ffi_main.gc(ffi_lib.trdispatch_mcu_alloc(
             self._trdispatch, mcu._serial.get_serialqueue(), # XXX
             self._cmd_queue, self._oid, set_timeout_tag, trigger_tag,

@@ -93,6 +93,7 @@ class AnalogProbe:
 
     def config_callbacks(self):
         # Setup config
+        logging.info("CPGK 1")
         self.mcu_endstop._mcu.add_config_cmd("config_analog_probe oid=%d pin=%s" 
                                              " trig_sup=%u trig_inf=%u trig_th=%u"
                                              " auto_th=%u auto_std_mul=%u"
@@ -101,11 +102,13 @@ class AnalogProbe:
                                                 self.trigger_sup*1, self.trigger_inf*1, int(self.threshold*10),
                                                 self.auto_threshold*1, int(self.auto_std_multiplier*100),
                                                 self.tare_buffer_len, self.current_buffer_len))
+        logging.info("CPGK 2")
         self.mcu_endstop._mcu.add_config_cmd(
             "analog_probe_home oid=%d clock=0 sample_ticks=0 sample_count=0"
             " rest_ticks=0 pin_value=0 trsync_oid=0 trigger_reason=0"
             % (self.mcu_endstop._oid), on_restart=True)
         # Lookup commands
+        logging.info("CPGK 3")
         cmd_queue = self.mcu_endstop._trsyncs[0].get_command_queue()
         self.mcu_endstop._home_cmd = self.mcu_endstop._mcu.lookup_command(
             "analog_probe_home oid=%c clock=%u sample_ticks=%u sample_count=%c"
@@ -115,6 +118,7 @@ class AnalogProbe:
             "analog_probe_query_state oid=%c",
             "endstop_state oid=%c homing=%c next_clock=%u pin_value=%c",
             oid=self.mcu_endstop._oid, cq=cmd_queue)
+        logging.info("CPGK 4")
         self.mcu_endstop._update_buffer_cmd = self.mcu_endstop._mcu.lookup_command("analog_probe_update_buffer oid=%c tare_buf_len=%u cur_buf_len=%u", cq=cmd_queue)
         self.mcu_endstop._do_tare_cmd = self.mcu_endstop._mcu.lookup_query_command("analog_probe_do_tare oid=%c",
                                                                                    "analog_probe_tare oid=%c tare=%u thresh=%u auto_th=%u std_mul=%u",
@@ -123,11 +127,17 @@ class AnalogProbe:
         self.mcu_endstop._report_cmd = self.mcu_endstop._mcu.lookup_query_command("analog_probe_query_report oid=%c", 
                                                                                   "analog_probe_report oid=%c raw=%u cur=%u tare=%u thresh=%u auto_th=%u std_mul=%u tare_buf=%u cur_buf=%u",
                                                                                   oid=self.mcu_endstop._oid, cq=cmd_queue)
+        logging.info("CPGK 5")
         self.mcu_endstop._init_probe_cmd = self.mcu_endstop._mcu.lookup_command("analog_probe_init oid=%c clock=%u rest_ticks=%u", cq=cmd_queue)
+        logging.info("CPGK 6")
         self.mcu_endstop._start_logging_cmd = self.mcu_endstop._mcu.lookup_command("analog_probe_start_log oid=%c log_ticks=%u", cq=cmd_queue)
+        logging.info("CPGK 7")
         self.mcu_endstop._stop_logging_cmd = self.mcu_endstop._mcu.lookup_command("analog_probe_stop_log oid=%c", cq=cmd_queue)
+        logging.info("CPGK 8")
         self.mcu_endstop._mcu.register_response(self._handle_logging, "analog_probe_logs", self.mcu_endstop._oid)
+        logging.info("CPGK 9")
         self.mcu_endstop._mcu.register_response(self._handle_activity, "analog_probe_active", self.mcu_endstop._oid)
+        logging.info("CPGK 10")
 
     def home_start(self, print_time, sample_time, sample_count, rest_time, triggered=True):
         return self.mcu_endstop.home_start(print_time, sample_time, 1, rest_time, triggered)

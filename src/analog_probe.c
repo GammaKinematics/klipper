@@ -159,7 +159,7 @@ analog_probe_event(struct timer *t)
             if (!probe->sample_count) {
                 sched_del_timer(&probe->time);
                 gpio_adc_cancel_sample(probe->pin);
-                sendf("analog_probe_active oid=%c active=%u", probe->oid, 0);
+                //sendf("analog_probe_active oid=%c active=%u", probe->oid, 0);
                 return SF_DONE;
             }
         }
@@ -186,7 +186,7 @@ analog_probe_event(struct timer *t)
         if (!(probe->trigger_count - 1)) {
             probe->sample_count = 0;
             trsync_do_trigger(probe->ts, probe->trigger_reason);
-            sendf("analog_probe_active oid=%c active=%u", probe->oid, 0);
+            //sendf("analog_probe_active oid=%c active=%u", probe->oid, 0);
             return SF_DONE;
         }
         probe->trigger_count--;
@@ -251,7 +251,7 @@ command_analog_probe_init(uint32_t *args)
     probe->time.func = analog_probe_event;
     probe->n_samples = 0;
     sched_add_timer(&probe->time);
-    sendf("analog_probe_active oid=%c active=%u", probe->oid, 1);
+    //sendf("analog_probe_active oid=%c active=%u", probe->oid, 1);
 }
 DECL_COMMAND(command_analog_probe_init,
              "analog_probe_init oid=%c clock=%u rest_ticks=%u");
@@ -279,7 +279,7 @@ command_analog_probe_stop_log(uint32_t *args)
     if (!probe->sample_count) {
         sched_del_timer(&probe->time);
         gpio_adc_cancel_sample(probe->pin);
-        sendf("analog_probe_active oid=%c active=%u", probe->oid, 0);
+        ///sendf("analog_probe_active oid=%c active=%u", probe->oid, 0);
     }
 }
 DECL_COMMAND(command_analog_probe_stop_log,
@@ -307,7 +307,7 @@ command_analog_probe_home(uint32_t *args)
     probe->trigger_reason = args[7];
     probe->n_samples = 0;
     sched_add_timer(&probe->time);
-    sendf("analog_probe_active oid=%c active=%u", probe->oid, 1);
+    //sendf("analog_probe_active oid=%c active=%u", probe->oid, 1);
 }
 DECL_COMMAND(command_analog_probe_home,
              "analog_probe_home oid=%c clock=%u sample_ticks=%u sample_count=%c"

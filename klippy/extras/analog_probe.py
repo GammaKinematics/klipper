@@ -50,8 +50,8 @@ class AnalogProbe:
         self.gcode.register_command('UPDATE_THRESHOLD', self.cmd_UPDATE_THRESHOLD,
                                     desc=self.cmd_UPDATE_THRESHOLD_help)
 
-        self.gcode.register_command('UPDATE_BUFFER_LEN', self.cmd_UPDATE_BUFFER_LEN,
-                                    desc=self.cmd_UPDATE_BUFFER_LEN_help)
+        # self.gcode.register_command('UPDATE_BUFFER_LEN', self.cmd_UPDATE_BUFFER_LEN,
+        #                             desc=self.cmd_UPDATE_BUFFER_LEN_help)
 
         self.gcode.register_command('INIT_PROBE',
                                     self.cmd_INIT_PROBE,
@@ -78,7 +78,7 @@ class AnalogProbe:
 
         self.reset_logs()
 
-    cmd_UPDATE_BUFFER_LEN_help = "Update the lenght of the buffers."
+    # cmd_UPDATE_BUFFER_LEN_help = "Update the lenght of the buffers."
     cmd_INIT_PROBE_help = "Initialize the probe."
     cmd_MAKE_TARE_help = "Tare the probe."
     cmd_UPDATE_THRESHOLD_help = "Update the threshold of the probe."

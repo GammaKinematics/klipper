@@ -259,13 +259,13 @@ DECL_COMMAND(command_analog_probe_init,
 void
 command_analog_probe_start_log(uint32_t *args)
 {
-    // struct analog_probe *probe = oid_lookup(args[0], command_config_analog_probe);
-    // probe->logging = 1;
-    // if (args[1]) {
-    //     probe->log_time = probe->time.waketime + args[1];
-    // } else {
-    //     probe->log_time = 0;
-    // }
+    struct analog_probe *probe = oid_lookup(args[0], command_config_analog_probe);
+    probe->logging = 1;
+    if (args[1]) {
+        probe->log_time = probe->time.waketime + args[1];
+    } else {
+        probe->log_time = 0;
+    }
 }
 DECL_COMMAND(command_analog_probe_start_log,
              "analog_probe_start_log oid=%c log_ticks=%u");

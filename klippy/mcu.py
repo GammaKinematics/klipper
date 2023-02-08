@@ -44,7 +44,6 @@ class MCU_trsync:
         return list(self._steppers)
     def _build_config(self):
         logging.info("CPGK")
-        logging.info(self._oid)
         mcu = self._mcu
         # Setup config
         mcu.add_config_cmd("config_trsync oid=%d" % (self._oid,))
@@ -872,7 +871,6 @@ class MCU:
             return None
     def lookup_command_tag(self, msgformat):
         all_msgs = self._serial.get_msgparser().get_messages()
-        logging.info({fmt: msgtag for msgtag, msgtype, fmt in all_msgs})
         return {fmt: msgtag for msgtag, msgtype, fmt in all_msgs}[msgformat]
     def get_enumerations(self):
         return self._serial.get_msgparser().get_enumerations()

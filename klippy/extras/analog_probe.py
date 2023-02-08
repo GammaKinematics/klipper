@@ -130,13 +130,13 @@ class AnalogProbe:
         logging.info("CPGK 5")
         self.mcu_endstop._init_probe_cmd = self.mcu_endstop._mcu.lookup_command("analog_probe_init oid=%c clock=%u rest_ticks=%u", cq=cmd_queue)
         logging.info("CPGK 6")
-        self.mcu_endstop._start_logging_cmd = self.mcu_endstop._mcu.lookup_command("analog_probe_start_log oid=%c log_ticks=%u", cq=cmd_queue)
+        #self.mcu_endstop._start_logging_cmd = self.mcu_endstop._mcu.lookup_command("analog_probe_start_log oid=%c log_ticks=%u", cq=cmd_queue)
         logging.info("CPGK 7")
-        self.mcu_endstop._stop_logging_cmd = self.mcu_endstop._mcu.lookup_command("analog_probe_stop_log oid=%c", cq=cmd_queue)
+        #self.mcu_endstop._stop_logging_cmd = self.mcu_endstop._mcu.lookup_command("analog_probe_stop_log oid=%c", cq=cmd_queue)
         logging.info("CPGK 8")
-        self.mcu_endstop._mcu.register_response(self._handle_logging, "analog_probe_logs", self.mcu_endstop._oid)
+        #self.mcu_endstop._mcu.register_response(self._handle_logging, "analog_probe_logs", self.mcu_endstop._oid)
         logging.info("CPGK 9")
-        self.mcu_endstop._mcu.register_response(self._handle_activity, "analog_probe_active", self.mcu_endstop._oid)
+        #self.mcu_endstop._mcu.register_response(self._handle_activity, "analog_probe_active", self.mcu_endstop._oid)
         logging.info("CPGK 10")
 
     def home_start(self, print_time, sample_time, sample_count, rest_time, triggered=True):

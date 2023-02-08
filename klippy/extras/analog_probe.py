@@ -61,9 +61,9 @@ class AnalogProbe:
                                     self.cmd_MAKE_TARE,
                                     desc=self.cmd_MAKE_TARE_help)
         
-        self.gcode.register_command('QUERY_STATE',
-                                    self.cmd_QUERY_STATE,
-                                    desc=self.cmd_MAKE_TARE_help)
+        # self.gcode.register_command('QUERY_STATE',
+        #                             self.cmd_QUERY_STATE,
+        #                             desc=self.cmd_MAKE_TARE_help)
 
         self.gcode.register_command('START_LOGGING',
                                     self.cmd_START_LOGGING,
@@ -120,9 +120,9 @@ class AnalogProbe:
                                                                                    "analog_probe_tare oid=%c tare=%u thresh=%u auto_th=%u std_mul=%u",
                                                                                    oid=self.mcu_endstop._oid, cq=cmd_queue)
         self.mcu_endstop._set_threshold_cmd = self.mcu_endstop._mcu.lookup_command("analog_probe_set_thresh oid=%c trig_th=%u auto_th=%u auto_std_mul=%u", cq=cmd_queue)
-        self.mcu_endstop._report_cmd = self.mcu_endstop._mcu.lookup_query_command("analog_probe_query_report oid=%c", 
-                                                                                  "analog_probe_report oid=%c raw=%u cur=%u tare=%u thresh=%u auto_th=%u std_mul=%u tare_buf=%u cur_buf=%u",
-                                                                                  oid=self.mcu_endstop._oid, cq=cmd_queue)
+        # self.mcu_endstop._report_cmd = self.mcu_endstop._mcu.lookup_query_command("analog_probe_query_report oid=%c", 
+        #                                                                           "analog_probe_report oid=%c raw=%u cur=%u tare=%u thresh=%u auto_th=%u std_mul=%u tare_buf=%u cur_buf=%u",
+        #                                                                           oid=self.mcu_endstop._oid, cq=cmd_queue)
         self.mcu_endstop._init_probe_cmd = self.mcu_endstop._mcu.lookup_command("analog_probe_init oid=%c clock=%u rest_ticks=%u", cq=cmd_queue)
         self.mcu_endstop._start_logging_cmd = self.mcu_endstop._mcu.lookup_command("analog_probe_start_log oid=%c log_ticks=%u", cq=cmd_queue)
         self.mcu_endstop._stop_logging_cmd = self.mcu_endstop._mcu.lookup_command("analog_probe_stop_log oid=%c", cq=cmd_queue)
@@ -206,24 +206,24 @@ class AnalogProbe:
             self.threshold = gcmd.get_float("THRESHOLD", 0.03)
         self.mcu_endstop._set_threshold_cmd.send([self.mcu_endstop._oid, int(self.threshold*1000), self.auto_threshold*1, int(self.auto_std_multiplier*100)])
 
-    def cmd_QUERY_STATE(self, gcmd):
-        params = self.mcu_endstop._report_cmd.send([self.mcu_endstop._oid])
+    # def cmd_QUERY_STATE(self, gcmd):
+    #     params = self.mcu_endstop._report_cmd.send([self.mcu_endstop._oid])
         
-        self.tare = float(params['tare'])/1000
-        self.threshold = float(params['thresh'])/1000
-        self.auto_threshold = bool(params['auto_th'])
-        self.auto_std_multiplier = float(params['std_mul'])/100
-        self.tare_buffer_len = params['tare_buf']
-        self.current_buffer_len = params['cur_buf']
+    #     self.tare = float(params['tare'])/1000
+    #     self.threshold = float(params['thresh'])/1000
+    #     self.auto_threshold = bool(params['auto_th'])
+    #     self.auto_std_multiplier = float(params['std_mul'])/100
+    #     self.tare_buffer_len = params['tare_buf']
+    #     self.current_buffer_len = params['cur_buf']
         
-        gcmd.respond_info("Raw: %i, Cur: %f, Tare: %f, Thresh: %f" % (params['raw'], 
-                                                                      float(params['cur'])/1000,
-                                                                      self.tare,
-                                                                      self.threshold))
-        gcmd.respond_info("Auto: %i, Std mul: %f, Tare buf: %i, Cur buf: %i" % (self.auto_threshold*1, 
-                                                                                self.auto_std_multiplier,
-                                                                                self.tare_buffer_len,
-                                                                                self.current_buffer_len))
+    #     gcmd.respond_info("Raw: %i, Cur: %f, Tare: %f, Thresh: %f" % (params['raw'], 
+    #                                                                   float(params['cur'])/1000,
+    #                                                                   self.tare,
+    #                                                                   self.threshold))
+    #     gcmd.respond_info("Auto: %i, Std mul: %f, Tare buf: %i, Cur buf: %i" % (self.auto_threshold*1, 
+    #                                                                             self.auto_std_multiplier,
+    #                                                                             self.tare_buffer_len,
+    #                                                                             self.current_buffer_len))
 
     def cmd_START_LOGGING(self, gcmd):
         rest_time = gcmd.get_float("TIMESTEP", 0.001)

@@ -105,7 +105,6 @@ class AnalogProbe:
             "analog_probe_home oid=%d clock=0 sample_ticks=0 sample_count=0"
             " rest_ticks=0 pin_value=0 trsync_oid=0 trigger_reason=0"
             % (self.mcu_endstop._oid), on_restart=True)
-        self.mcu_endstop._mcu.add_config_cmd("analog_probe_start_log oid=%d log_ticks=0" % (self.mcu_endstop._oid), on_restart=True)
         # Lookup commands
         cmd_queue = self.mcu_endstop._trsyncs[0].get_command_queue()
         self.mcu_endstop._home_cmd = self.mcu_endstop._mcu.lookup_command(
@@ -126,7 +125,7 @@ class AnalogProbe:
                                                                                   oid=self.mcu_endstop._oid, cq=cmd_queue)
         self.mcu_endstop._init_probe_cmd = self.mcu_endstop._mcu.lookup_command("analog_probe_init oid=%c clock=%u rest_ticks=%u", cq=cmd_queue)
         self.mcu_endstop._start_logging_cmd = self.mcu_endstop._mcu.lookup_command("analog_probe_start_log oid=%c log_ticks=%u", cq=cmd_queue)
-        #self.mcu_endstop._stop_logging_cmd = self.mcu_endstop._mcu.lookup_command("analog_probe_stop_log oid=%c", cq=cmd_queue)
+        self.mcu_endstop._stop_logging_cmd = self.mcu_endstop._mcu.lookup_command("analog_probe_stop_log oid=%c", cq=cmd_queue)
         self.mcu_endstop._mcu.register_response(self._handle_logging, "analog_probe_logs", self.mcu_endstop._oid)
         self.mcu_endstop._mcu.register_response(self._handle_activity, "analog_probe_active", self.mcu_endstop._oid)
 
@@ -226,24 +225,24 @@ class AnalogProbe:
                                                                                 self.tare_buffer_len,
                                                                                 self.current_buffer_len))
 
-    # def cmd_START_LOGGING(self, gcmd):
-    #     rest_time = gcmd.get_float("TIMESTEP", 0.001)
-    #     log_time = gcmd.get_float("DURATION", 0.0)
-    #     self._logfile_name = gcmd.get("FILENAME", "analog_probe_logs")
-    #     self._gcmd = gcmd
-    #     print_time = self.printer.lookup_object('toolhead').get_last_move_time()
-    #     clock = self.mcu_endstop._mcu.print_time_to_clock(print_time)
-    #     rest_ticks = self.mcu_endstop._mcu.print_time_to_clock(rest_time)
-    #     log_ticks = self.mcu_endstop._mcu.print_time_to_clock(log_time)
-    #     self.reset_logs()
-    #     if not self.is_active:
-    #         self.mcu_endstop._init_probe_cmd.send([self.mcu_endstop._oid, clock, rest_ticks])
-    #     self.mcu_endstop._start_logging_cmd.send([self.mcu_endstop._oid, log_ticks])
+    def cmd_START_LOGGING(self, gcmd):
+        rest_time = gcmd.get_float("TIMESTEP", 0.001)
+        log_time = gcmd.get_float("DURATION", 0.0)
+        self._logfile_name = gcmd.get("FILENAME", "analog_probe_logs")
+        self._gcmd = gcmd
+        print_time = self.printer.lookup_object('toolhead').get_last_move_time()
+        clock = self.mcu_endstop._mcu.print_time_to_clock(print_time)
+        rest_ticks = self.mcu_endstop._mcu.print_time_to_clock(rest_time)
+        log_ticks = self.mcu_endstop._mcu.print_time_to_clock(log_time)
+        self.reset_logs()
+        if not self.is_active:
+            self.mcu_endstop._init_probe_cmd.send([self.mcu_endstop._oid, clock, rest_ticks])
+        self.mcu_endstop._start_logging_cmd.send([self.mcu_endstop._oid, log_ticks])
 
-    # def cmd_STOP_LOGGING(self, gcmd):
-    #     self.mcu_endstop._stop_logging_cmd.send([self.mcu_endstop._oid])
-    #     gcmd.respond_info("Record finished")
-    #     self.save_logs()
+    def cmd_STOP_LOGGING(self, gcmd):
+        self.mcu_endstop._stop_logging_cmd.send([self.mcu_endstop._oid])
+        gcmd.respond_info("Record finished")
+        self.save_logs()
 
     def _handle_logging(self, params):
         self._ts.append(int(params['ts']))

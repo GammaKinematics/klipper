@@ -136,7 +136,7 @@ class AnalogProbe:
         logging.info("CPGK 8")
         #self.mcu_endstop._mcu.register_response(self._handle_logging, "analog_probe_logs", self.mcu_endstop._oid)
         logging.info("CPGK 9")
-        #self.mcu_endstop._mcu.register_response(self._handle_activity, "analog_probe_active", self.mcu_endstop._oid)
+        self.mcu_endstop._mcu.register_response(self._handle_activity, "analog_probe_active", self.mcu_endstop._oid)
         logging.info("CPGK 10")
 
     def home_start(self, print_time, sample_time, sample_count, rest_time, triggered=True):
@@ -269,8 +269,8 @@ class AnalogProbe:
     #         self._gcmd.respond_info("Record finished")
     #         self.save_logs()
 
-    # def _handle_activity(self, params):
-    #     self.is_active = bool(params['active'])
+    def _handle_activity(self, params):
+        self.is_active = bool(params['active'])
 
     def reset_logs(self):
         self._ts = []

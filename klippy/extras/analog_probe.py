@@ -105,6 +105,7 @@ class AnalogProbe:
             "analog_probe_home oid=%d clock=0 sample_ticks=0 sample_count=0"
             " rest_ticks=0 pin_value=0 trsync_oid=0 trigger_reason=0"
             % (self.mcu_endstop._oid), on_restart=True)
+        self.mcu_endstop._mcu.add_config_cmd("analog_probe_start_log oid=%d log_ticks=0" % (self.mcu_endstop._oid), on_restart=True)
         # Lookup commands
         cmd_queue = self.mcu_endstop._trsyncs[0].get_command_queue()
         self.mcu_endstop._home_cmd = self.mcu_endstop._mcu.lookup_command(
@@ -124,7 +125,7 @@ class AnalogProbe:
                                                                                   "analog_probe_report oid=%c raw=%u cur=%u tare=%u thresh=%u auto_th=%u std_mul=%u tare_buf=%u cur_buf=%u",
                                                                                   oid=self.mcu_endstop._oid, cq=cmd_queue)
         self.mcu_endstop._init_probe_cmd = self.mcu_endstop._mcu.lookup_command("analog_probe_init oid=%c clock=%u rest_ticks=%u", cq=cmd_queue)
-        #self.mcu_endstop._start_logging_cmd = self.mcu_endstop._mcu.lookup_command("analog_probe_start_log oid=%c log_ticks=%u", cq=cmd_queue)
+        self.mcu_endstop._start_logging_cmd = self.mcu_endstop._mcu.lookup_command("analog_probe_start_log oid=%c log_ticks=%u", cq=cmd_queue)
         #self.mcu_endstop._stop_logging_cmd = self.mcu_endstop._mcu.lookup_command("analog_probe_stop_log oid=%c", cq=cmd_queue)
         self.mcu_endstop._mcu.register_response(self._handle_logging, "analog_probe_logs", self.mcu_endstop._oid)
         self.mcu_endstop._mcu.register_response(self._handle_activity, "analog_probe_active", self.mcu_endstop._oid)

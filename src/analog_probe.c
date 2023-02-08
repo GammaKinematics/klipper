@@ -270,20 +270,20 @@ DECL_COMMAND(command_analog_probe_init,
 // DECL_COMMAND(command_analog_probe_start_log,
 //              "analog_probe_start_log oid=%c log_ticks=%u");
 
-void
-command_analog_probe_stop_log(uint32_t *args)
-{
-    struct analog_probe *probe = oid_lookup(args[0], command_config_analog_probe);
-    probe->logging = 0;
-    probe->log_time = 0;
-    if (!probe->sample_count) {
-        sched_del_timer(&probe->time);
-        gpio_adc_cancel_sample(probe->pin);
-        ///sendf("analog_probe_active oid=%c active=%u", probe->oid, 0);
-    }
-}
-DECL_COMMAND(command_analog_probe_stop_log,
-             "analog_probe_stop_log oid=%c");
+// void
+// command_analog_probe_stop_log(uint32_t *args)
+// {
+//     struct analog_probe *probe = oid_lookup(args[0], command_config_analog_probe);
+//     probe->logging = 0;
+//     probe->log_time = 0;
+//     if (!probe->sample_count) {
+//         sched_del_timer(&probe->time);
+//         gpio_adc_cancel_sample(probe->pin);
+//         ///sendf("analog_probe_active oid=%c active=%u", probe->oid, 0);
+//     }
+// }
+// DECL_COMMAND(command_analog_probe_stop_log,
+//              "analog_probe_stop_log oid=%c");
 
 void
 command_analog_probe_home(uint32_t *args)

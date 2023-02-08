@@ -132,7 +132,7 @@ class AnalogProbe:
         logging.info("CPGK 6")
         #self.mcu_endstop._start_logging_cmd = self.mcu_endstop._mcu.lookup_command("analog_probe_start_log oid=%c log_ticks=%u", cq=cmd_queue)
         logging.info("CPGK 7")
-        self.mcu_endstop._stop_logging_cmd = self.mcu_endstop._mcu.lookup_command("analog_probe_stop_log oid=%c", cq=cmd_queue)
+        #self.mcu_endstop._stop_logging_cmd = self.mcu_endstop._mcu.lookup_command("analog_probe_stop_log oid=%c", cq=cmd_queue)
         logging.info("CPGK 8")
         self.mcu_endstop._mcu.register_response(self._handle_logging, "analog_probe_logs", self.mcu_endstop._oid)
         logging.info("CPGK 9")
@@ -249,10 +249,10 @@ class AnalogProbe:
     #         self.mcu_endstop._init_probe_cmd.send([self.mcu_endstop._oid, clock, rest_ticks])
     #     self.mcu_endstop._start_logging_cmd.send([self.mcu_endstop._oid, log_ticks])
 
-    def cmd_STOP_LOGGING(self, gcmd):
-        self.mcu_endstop._stop_logging_cmd.send([self.mcu_endstop._oid])
-        gcmd.respond_info("Record finished")
-        self.save_logs()
+    # def cmd_STOP_LOGGING(self, gcmd):
+    #     self.mcu_endstop._stop_logging_cmd.send([self.mcu_endstop._oid])
+    #     gcmd.respond_info("Record finished")
+    #     self.save_logs()
 
     def _handle_logging(self, params):
         self._ts.append(int(params['ts']))

@@ -270,36 +270,20 @@ command_analog_probe_start_log(uint32_t *args)
 DECL_COMMAND(command_analog_probe_start_log,
              "analog_probe_start_log oid=%c log_ticks=%u");
 
-// void
-// command_analog_probe_stop_log(uint32_t *args)
-// {
-//     struct analog_probe *probe = oid_lookup(args[0], command_config_analog_probe);
-//     probe->logging = 0;
-//     probe->log_time = 0;
-//     if (!probe->sample_count) {
-//         sched_del_timer(&probe->time);
-//         gpio_adc_cancel_sample(probe->pin);
-//         sendf("analog_probe_active oid=%c active=%u", probe->oid, 0);
-//     }
-// }
-// DECL_COMMAND(command_analog_probe_stop_log,
-//              "analog_probe_stop_log oid=%c");
-
-// void
-// command_analog_probe_test1(uint32_t *args)
-// {
-//     struct analog_probe *probe = oid_lookup(args[0], command_config_analog_probe);
-// }
-// DECL_COMMAND(command_analog_probe_test1,
-//              "analog_probe_test1 oid=%c");
-
-// void
-// command_analog_probe_test2(uint32_t *args)
-// {
-//     struct analog_probe *probe = oid_lookup(args[0], command_config_analog_probe);
-// }
-// DECL_COMMAND(command_analog_probe_test2,
-//              "analog_probe_test2 oid=%c");
+void
+command_analog_probe_stop_log(uint32_t *args)
+{
+    struct analog_probe *probe = oid_lookup(args[0], command_config_analog_probe);
+    probe->logging = 0;
+    probe->log_time = 0;
+    if (!probe->sample_count) {
+        sched_del_timer(&probe->time);
+        gpio_adc_cancel_sample(probe->pin);
+        sendf("analog_probe_active oid=%c active=%u", probe->oid, 0);
+    }
+}
+DECL_COMMAND(command_analog_probe_stop_log,
+             "analog_probe_stop_log oid=%c");
 
 void
 command_analog_probe_home(uint32_t *args)
@@ -323,7 +307,7 @@ command_analog_probe_home(uint32_t *args)
     probe->trigger_reason = args[7];
     probe->n_samples = 0;
     sched_add_timer(&probe->time);
-    //sendf("analog_probe_active oid=%c active=%u", probe->oid, 1);
+    sendf("analog_probe_active oid=%c active=%u", probe->oid, 1);
 }
 DECL_COMMAND(command_analog_probe_home,
              "analog_probe_home oid=%c clock=%u sample_ticks=%u sample_count=%c"

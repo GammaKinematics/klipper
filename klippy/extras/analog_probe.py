@@ -69,9 +69,9 @@ class AnalogProbe:
                                     self.cmd_START_LOGGING,
                                     desc=self.cmd_START_LOGGING_help)
 
-        # self.gcode.register_command('STOP_LOGGING',
-        #                             self.cmd_STOP_LOGGING,
-        #                             desc=self.cmd_STOP_LOGGING_help)
+        self.gcode.register_command('STOP_LOGGING',
+                                    self.cmd_STOP_LOGGING,
+                                    desc=self.cmd_STOP_LOGGING_help)
         
         # multi probes state
         self.multi = 'OFF'
@@ -83,7 +83,7 @@ class AnalogProbe:
     cmd_MAKE_TARE_help = "Tare the probe."
     cmd_UPDATE_THRESHOLD_help = "Update the threshold of the probe."
     cmd_START_LOGGING_help = "Start logging the probe values."
-    #cmd_STOP_LOGGING_help = "Stop logging the probe values."
+    cmd_STOP_LOGGING_help = "Stop logging the probe values."
 
     def handle_mcu_identify(self):
         kin = self.printer.lookup_object('toolhead').get_kinematics()
@@ -125,9 +125,7 @@ class AnalogProbe:
                                                                                   oid=self.mcu_endstop._oid, cq=cmd_queue)
         self.mcu_endstop._init_probe_cmd = self.mcu_endstop._mcu.lookup_command("analog_probe_init oid=%c clock=%u rest_ticks=%u", cq=cmd_queue)
         self.mcu_endstop._start_logging_cmd = self.mcu_endstop._mcu.lookup_command("analog_probe_start_log oid=%c log_ticks=%u", cq=cmd_queue)
-        # self.mcu_endstop._stop_logging_cmd = self.mcu_endstop._mcu.lookup_command("analog_probe_stop_log oid=%c", cq=cmd_queue)
-        # self.mcu_endstop._test1_cmd = self.mcu_endstop._mcu.lookup_command("analog_probe_test1 oid=%c", cq=cmd_queue)
-        # self.mcu_endstop._test2_cmd = self.mcu_endstop._mcu.lookup_command("analog_probe_test2 oid=%c", cq=cmd_queue)
+        self.mcu_endstop._stop_logging_cmd = self.mcu_endstop._mcu.lookup_command("analog_probe_stop_log oid=%c", cq=cmd_queue)
         self.mcu_endstop._mcu.register_response(self._handle_logging, "analog_probe_logs", self.mcu_endstop._oid)
         self.mcu_endstop._mcu.register_response(self._handle_activity, "analog_probe_active", self.mcu_endstop._oid)
 
@@ -241,10 +239,10 @@ class AnalogProbe:
             self.mcu_endstop._init_probe_cmd.send([self.mcu_endstop._oid, clock, rest_ticks])
         self.mcu_endstop._start_logging_cmd.send([self.mcu_endstop._oid, log_ticks])
 
-    # def cmd_STOP_LOGGING(self, gcmd):
-    #     self.mcu_endstop._stop_logging_cmd.send([self.mcu_endstop._oid])
-    #     gcmd.respond_info("Record finished")
-    #     self.save_logs()
+    def cmd_STOP_LOGGING(self, gcmd):
+        self.mcu_endstop._stop_logging_cmd.send([self.mcu_endstop._oid])
+        gcmd.respond_info("Record finished")
+        self.save_logs()
 
     def _handle_logging(self, params):
         self._ts.append(int(params['ts']))

@@ -256,50 +256,50 @@ command_analog_probe_init(uint32_t *args)
 DECL_COMMAND(command_analog_probe_init,
              "analog_probe_init oid=%c clock=%u rest_ticks=%u");
 
-void
-command_analog_probe_start_log(uint32_t *args)
-{
-    struct analog_probe *probe = oid_lookup(args[0], command_config_analog_probe);
-    probe->logging = 1;
-    if (args[1]) {
-        probe->log_time = probe->time.waketime + args[1];
-    } else {
-        probe->log_time = 0;
-    }
-}
-DECL_COMMAND(command_analog_probe_start_log,
-             "analog_probe_start_log oid=%c log_ticks=%u");
+// void
+// command_analog_probe_start_log(uint32_t *args)
+// {
+//     struct analog_probe *probe = oid_lookup(args[0], command_config_analog_probe);
+//     probe->logging = 1;
+//     if (args[1]) {
+//         probe->log_time = probe->time.waketime + args[1];
+//     } else {
+//         probe->log_time = 0;
+//     }
+// }
+// DECL_COMMAND(command_analog_probe_start_log,
+//              "analog_probe_start_log oid=%c log_ticks=%u");
 
-void
-command_analog_probe_stop_log(uint32_t *args)
-{
-    struct analog_probe *probe = oid_lookup(args[0], command_config_analog_probe);
-    probe->logging = 0;
-    probe->log_time = 0;
-    if (!probe->sample_count) {
-        sched_del_timer(&probe->time);
-        gpio_adc_cancel_sample(probe->pin);
-        sendf("analog_probe_active oid=%c active=%u", probe->oid, 0);
-    }
-}
-DECL_COMMAND(command_analog_probe_stop_log,
-             "analog_probe_stop_log oid=%c");
+// void
+// command_analog_probe_stop_log(uint32_t *args)
+// {
+//     struct analog_probe *probe = oid_lookup(args[0], command_config_analog_probe);
+//     probe->logging = 0;
+//     probe->log_time = 0;
+//     if (!probe->sample_count) {
+//         sched_del_timer(&probe->time);
+//         gpio_adc_cancel_sample(probe->pin);
+//         sendf("analog_probe_active oid=%c active=%u", probe->oid, 0);
+//     }
+// }
+// DECL_COMMAND(command_analog_probe_stop_log,
+//              "analog_probe_stop_log oid=%c");
 
-void
-command_analog_probe_test1(uint32_t *args)
-{
-    struct analog_probe *probe = oid_lookup(args[0], command_config_analog_probe);
-}
-DECL_COMMAND(command_analog_probe_test1,
-             "analog_probe_test1 oid=%c");
+// void
+// command_analog_probe_test1(uint32_t *args)
+// {
+//     struct analog_probe *probe = oid_lookup(args[0], command_config_analog_probe);
+// }
+// DECL_COMMAND(command_analog_probe_test1,
+//              "analog_probe_test1 oid=%c");
 
-void
-command_analog_probe_test2(uint32_t *args)
-{
-    struct analog_probe *probe = oid_lookup(args[0], command_config_analog_probe);
-}
-DECL_COMMAND(command_analog_probe_test2,
-             "analog_probe_test2 oid=%c");
+// void
+// command_analog_probe_test2(uint32_t *args)
+// {
+//     struct analog_probe *probe = oid_lookup(args[0], command_config_analog_probe);
+// }
+// DECL_COMMAND(command_analog_probe_test2,
+//              "analog_probe_test2 oid=%c");
 
 void
 command_analog_probe_home(uint32_t *args)
@@ -346,15 +346,15 @@ command_analog_probe_query_state(uint32_t *args)
 }
 DECL_COMMAND(command_analog_probe_query_state, "analog_probe_query_state oid=%c");
 
-void 
-command_update_buffer(uint32_t *args) {
-    struct analog_probe *probe = oid_lookup(args[0], command_config_analog_probe);
-    probe->tare_buffer_length = args[1];
-    probe->current_buffer_length = args[2];
-    probe->used_buffer_length = (probe->tare_buffer_length > probe->current_buffer_length) ? probe->tare_buffer_length : probe->current_buffer_length;
-    probe->n_samples = 0;
-}
-DECL_COMMAND(command_update_buffer, "analog_probe_update_buffer oid=%c tare_buf_len=%u cur_buf_len=%u");
+// void 
+// command_update_buffer(uint32_t *args) {
+//     struct analog_probe *probe = oid_lookup(args[0], command_config_analog_probe);
+//     probe->tare_buffer_length = args[1];
+//     probe->current_buffer_length = args[2];
+//     probe->used_buffer_length = (probe->tare_buffer_length > probe->current_buffer_length) ? probe->tare_buffer_length : probe->current_buffer_length;
+//     probe->n_samples = 0;
+// }
+// DECL_COMMAND(command_update_buffer, "analog_probe_update_buffer oid=%c tare_buf_len=%u cur_buf_len=%u");
 
 void 
 command_do_tare(uint32_t *args) {

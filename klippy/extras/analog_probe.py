@@ -28,7 +28,7 @@ class AnalogProbe:
         self.tare_buffer_len = config.getint('tare_buffer_len', 100)
         self.current_buffer_len = config.getint('current_buffer_len', 5)
 
-        #self.is_active = False
+        self.is_active = False
 
         # Create an "endstop" object to handle the sensor pin
         ppins = self.printer.lookup_object('pins')
@@ -235,42 +235,42 @@ class AnalogProbe:
                                                                                 self.tare_buffer_len,
                                                                                 self.current_buffer_len))
 
-    def cmd_START_LOGGING(self, gcmd):
-        rest_time = gcmd.get_float("TIMESTEP", 0.001)
-        log_time = gcmd.get_float("DURATION", 0.0)
-        self._logfile_name = gcmd.get("FILENAME", "analog_probe_logs")
-        self._gcmd = gcmd
-        print_time = self.printer.lookup_object('toolhead').get_last_move_time()
-        clock = self.mcu_endstop._mcu.print_time_to_clock(print_time)
-        rest_ticks = self.mcu_endstop._mcu.print_time_to_clock(rest_time)
-        log_ticks = self.mcu_endstop._mcu.print_time_to_clock(log_time)
-        self.reset_logs()
-        if not self.is_active:
-            self.mcu_endstop._init_probe_cmd.send([self.mcu_endstop._oid, clock, rest_ticks])
-        self.mcu_endstop._start_logging_cmd.send([self.mcu_endstop._oid, log_ticks])
+    # def cmd_START_LOGGING(self, gcmd):
+    #     rest_time = gcmd.get_float("TIMESTEP", 0.001)
+    #     log_time = gcmd.get_float("DURATION", 0.0)
+    #     self._logfile_name = gcmd.get("FILENAME", "analog_probe_logs")
+    #     self._gcmd = gcmd
+    #     print_time = self.printer.lookup_object('toolhead').get_last_move_time()
+    #     clock = self.mcu_endstop._mcu.print_time_to_clock(print_time)
+    #     rest_ticks = self.mcu_endstop._mcu.print_time_to_clock(rest_time)
+    #     log_ticks = self.mcu_endstop._mcu.print_time_to_clock(log_time)
+    #     self.reset_logs()
+    #     if not self.is_active:
+    #         self.mcu_endstop._init_probe_cmd.send([self.mcu_endstop._oid, clock, rest_ticks])
+    #     self.mcu_endstop._start_logging_cmd.send([self.mcu_endstop._oid, log_ticks])
 
-    def cmd_STOP_LOGGING(self, gcmd):
-        self.mcu_endstop._stop_logging_cmd.send([self.mcu_endstop._oid])
-        gcmd.respond_info("Record finished")
-        self.save_logs()
+    # def cmd_STOP_LOGGING(self, gcmd):
+    #     self.mcu_endstop._stop_logging_cmd.send([self.mcu_endstop._oid])
+    #     gcmd.respond_info("Record finished")
+    #     self.save_logs()
 
-    def _handle_logging(self, params):
-        self._ts.append(int(params['ts']))
-        self._raws.append(int(params['raw']))
-        self._curs.append(float(params['cur'])/1000)
-        self._tares.append(float(params['tare'])/1000)
-        self._thresholds.append(float(params['thresh'])/1000)
-        self._auto_thresholds.append(bool(params['auto_th']))
-        self._auto_std_multipliers.append(float(params['std_mul'])/100)
-        self._tare_buffer_lens.append(params['tare_buf'])
-        self._current_buffer_lens.append(params['cur_buf'])
-        self._trigs.append(bool(params['trig']))
-        if bool(params['finished']):
-            self._gcmd.respond_info("Record finished")
-            self.save_logs()
+    # def _handle_logging(self, params):
+    #     self._ts.append(int(params['ts']))
+    #     self._raws.append(int(params['raw']))
+    #     self._curs.append(float(params['cur'])/1000)
+    #     self._tares.append(float(params['tare'])/1000)
+    #     self._thresholds.append(float(params['thresh'])/1000)
+    #     self._auto_thresholds.append(bool(params['auto_th']))
+    #     self._auto_std_multipliers.append(float(params['std_mul'])/100)
+    #     self._tare_buffer_lens.append(params['tare_buf'])
+    #     self._current_buffer_lens.append(params['cur_buf'])
+    #     self._trigs.append(bool(params['trig']))
+    #     if bool(params['finished']):
+    #         self._gcmd.respond_info("Record finished")
+    #         self.save_logs()
 
-    def _handle_activity(self, params):
-        self.is_active = bool(params['active'])
+    # def _handle_activity(self, params):
+    #     self.is_active = bool(params['active'])
 
     def reset_logs(self):
         self._ts = []

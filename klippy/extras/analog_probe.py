@@ -134,7 +134,7 @@ class AnalogProbe:
         logging.info("CPGK 7")
         #self.mcu_endstop._stop_logging_cmd = self.mcu_endstop._mcu.lookup_command("analog_probe_stop_log oid=%c", cq=cmd_queue)
         logging.info("CPGK 8")
-        #self.mcu_endstop._mcu.register_response(self._handle_logging, "analog_probe_logs", self.mcu_endstop._oid)
+        self.mcu_endstop._mcu.register_response(self._handle_logging, "analog_probe_logs", self.mcu_endstop._oid)
         logging.info("CPGK 9")
         self.mcu_endstop._mcu.register_response(self._handle_activity, "analog_probe_active", self.mcu_endstop._oid)
         logging.info("CPGK 10")
@@ -254,20 +254,20 @@ class AnalogProbe:
     #     gcmd.respond_info("Record finished")
     #     self.save_logs()
 
-    # def _handle_logging(self, params):
-    #     self._ts.append(int(params['ts']))
-    #     self._raws.append(int(params['raw']))
-    #     self._curs.append(float(params['cur'])/1000)
-    #     self._tares.append(float(params['tare'])/1000)
-    #     self._thresholds.append(float(params['thresh'])/1000)
-    #     self._auto_thresholds.append(bool(params['auto_th']))
-    #     self._auto_std_multipliers.append(float(params['std_mul'])/100)
-    #     self._tare_buffer_lens.append(params['tare_buf'])
-    #     self._current_buffer_lens.append(params['cur_buf'])
-    #     self._trigs.append(bool(params['trig']))
-    #     if bool(params['finished']):
-    #         self._gcmd.respond_info("Record finished")
-    #         self.save_logs()
+    def _handle_logging(self, params):
+        self._ts.append(int(params['ts']))
+        self._raws.append(int(params['raw']))
+        self._curs.append(float(params['cur'])/1000)
+        self._tares.append(float(params['tare'])/1000)
+        self._thresholds.append(float(params['thresh'])/1000)
+        self._auto_thresholds.append(bool(params['auto_th']))
+        self._auto_std_multipliers.append(float(params['std_mul'])/100)
+        self._tare_buffer_lens.append(params['tare_buf'])
+        self._current_buffer_lens.append(params['cur_buf'])
+        self._trigs.append(bool(params['trig']))
+        if bool(params['finished']):
+            self._gcmd.respond_info("Record finished")
+            self.save_logs()
 
     def _handle_activity(self, params):
         self.is_active = bool(params['active'])

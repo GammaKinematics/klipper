@@ -285,13 +285,13 @@ command_analog_probe_stop_log(uint32_t *args)
 DECL_COMMAND(command_analog_probe_stop_log,
              "analog_probe_stop_log oid=%c");
 
-// void
-// command_analog_probe_test1(uint32_t *args)
-// {
-//     struct analog_probe *probe = oid_lookup(args[0], command_config_analog_probe);
-// }
-// DECL_COMMAND(command_analog_probe_test1,
-//              "analog_probe_test1 oid=%c");
+void
+command_analog_probe_test1(uint32_t *args)
+{
+    struct analog_probe *probe = oid_lookup(args[0], command_config_analog_probe);
+}
+DECL_COMMAND(command_analog_probe_test1,
+             "analog_probe_test1 oid=%c");
 
 void
 command_analog_probe_home(uint32_t *args)

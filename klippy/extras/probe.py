@@ -273,8 +273,8 @@ class PrinterProbe:
             except:
                 pass
             f = open("/tmp/"+self.logfile_name+".csv", "w")
-            f.write("timestamp,raw,cur,tare,thresh,trig,auto_th,std_mul,tare_buf,cur_buf\n")
-            for i in range(len(self._ts)):
+            f.write("X,Y,index,speed,retrect,Z\n")
+            for i in range(len(self.z_log)):
                 f.write("%f,%f,%i,%f,%f,%f\n" % (self.posX_log[i], self.posY_log[i], self.index_log[i], self.speed_log[i], self.retract_log[i], self.z_log[i]))
             f.close()
         write_proc = multiprocessing.Process(target=write_impl)

@@ -3,7 +3,7 @@
 # Copyright (C) 2017-2021  Kevin O'Connor <kevin@koconnor.net>
 #
 # This file may be distributed under the terms of the GNU GPLv3 license.
-import logging
+import logging, multiprocessing, os
 import pins
 from . import manual_probe
 
@@ -28,6 +28,15 @@ class PrinterProbe:
         self.last_state = False
         self.last_z_result = 0.
         self.gcode_move = self.printer.load_object(config, "gcode_move")
+
+        self.posX_log = []
+        self.posY_log = []
+        self.index_log = []
+        self.speed_log = []
+        self.retract_log = []
+        self.z_log = []
+        self.logfile_name = "test"
+
         # Infer Z position to move to during a probe
         if config.has_section('stepper_z'):
             zconfig = config.getsection('stepper_z')
@@ -70,6 +79,10 @@ class PrinterProbe:
         self.gcode.register_command('PROBE_CALIBRATE', self.cmd_PROBE_CALIBRATE,
                                     desc=self.cmd_PROBE_CALIBRATE_help)
         self.gcode.register_command('PROBE_ACCURACY', self.cmd_PROBE_ACCURACY,
+                                    desc=self.cmd_PROBE_ACCURACY_help)
+        self.gcode.register_command('PROBE_LOG_RESET', self.cmd_probe_accuracy_log_reset,
+                                    desc=self.cmd_PROBE_ACCURACY_help)
+        self.gcode.register_command('PROBE_LOG_SAVE', self.cmd_probe_accuracy_log_save,
                                     desc=self.cmd_PROBE_ACCURACY_help)
         self.gcode.register_command('Z_OFFSET_APPLY_PROBE',
                                     self.cmd_Z_OFFSET_APPLY_PROBE,
@@ -219,6 +232,12 @@ class PrinterProbe:
             # Probe position
             pos = self._probe(speed)
             positions.append(pos)
+            self.posX_log.append(pos[0])
+            self.posY_log.append(pos[1])
+            self.index_log.append(len(positions))
+            self.speed_log.append(speed)
+            self.retract_log.append(sample_retract_dist)
+            self.z_log.append(pos[2])
             # Retract
             liftpos = [None, None, pos[2] + sample_retract_dist]
             self._move(liftpos, lift_speed)
@@ -239,6 +258,28 @@ class PrinterProbe:
             "probe accuracy results: maximum %.6f, minimum %.6f, range %.6f, "
             "average %.6f, median %.6f, standard deviation %.6f" % (
             max_value, min_value, range_value, avg_value, median, sigma))
+    def cmd_probe_accuracy_log_reset(self, gcmd):
+        self.logfile_name = gcmd.get("FILENAME", "analog_probe_rep")
+        self.posX_log = []
+        self.posY_log = []
+        self.index_log = []
+        self.speed_log = []
+        self.retract_log = []
+        self.z_log = []
+    def cmd_probe_accuracy_log_save(self, gcmd):
+        def write_impl():
+            try:
+                os.nice(20)
+            except:
+                pass
+            f = open("/tmp/"+self.logfile_name+".csv", "w")
+            f.write("timestamp,raw,cur,tare,thresh,trig,auto_th,std_mul,tare_buf,cur_buf\n")
+            for i in range(len(self._ts)):
+                f.write("%f,%f,%i,%f,%f,%f\n" % (self.posX_log[i], self.posY_log[i], self.index_log[i], self.speed_log[i], self.retract_log[i], self.z_log[i]))
+            f.close()
+        write_proc = multiprocessing.Process(target=write_impl)
+        write_proc.daemon = True
+        write_proc.start()
     def probe_calibrate_finalize(self, kin_pos):
         if kin_pos is None:
             return
